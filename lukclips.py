@@ -858,7 +858,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 # ============================================================================
 # Atualização automática: crie um repositório no GitHub (ex.: "seu-usuario/LukClips"),
 # publique os instaladores em "Releases" com a tag v3.1, v3.2... e coloque o nome aqui.
-REPO_GITHUB = ""
+REPO_GITHUB = "LUKbrDEV/LukClips"
 
 PASTA_LOGS = PASTA_CONFIG / "logs"
 

@@ -1,0 +1,22 @@
+# Arquivos gerados (pesados) - vão para "Releases", não para o código
+LukClips_Setup_*.exe
+LukClips.zip
+build/
+dist/
+*.spec
+
+# Cortes, cache e vídeos
+cortes/
+_lukclips_cache/
+*.mp4
+*.mkv
+*.webm
+*.wav
+
+# Python
+__pycache__/
+*.pyc
+
+# Segredos (nunca enviar)
+cookies.txt
+*.cookies

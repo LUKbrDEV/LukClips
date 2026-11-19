@@ -1,0 +1,83 @@
+LukClips v3.0 - Feito por LukDev
+=================================
+
+O QUE TEM NESTA PASTA
+  lukclips.py           o programa
+  momentos.py           escolhe os melhores momentos      (precisa ficar junto)
+  visual.py             desenha o fundo, logo e botão 3D  (precisa ficar junto)
+  ABRIR_LUKCLIPS.bat    abre o programa no seu PC
+  GERAR_EXE.bat         cria o instalador e o zip para os amigos
+  PUBLICAR_VERSAO.bat   publica uma versão nova no GitHub (atualização automática)
+  LukClips.iss          receita do instalador (usado pelo GERAR_EXE.bat)
+  lukclips.ico / .png   ícone
+
+
+>>> PARA VOCÊ USAR
+  Dois cliques em ABRIR_LUKCLIPS.bat
+
+
+>>> PARA MANDAR AOS AMIGOS
+  1. Dois cliques em GERAR_EXE.bat (na 1ª vez ele instala o Inno Setup sozinho)
+  2. Saem dois arquivos nesta pasta:
+       LukClips_Setup_3.0.exe  -> instalador (atalho na área de trabalho e
+                                  no menu Iniciar, aparece em "Desinstalar")
+       LukClips.zip            -> versão sem instalar
+  3. Mande o instalador (Google Drive / Mega / WeTransfer, uns 300-500 MB)
+  O Windows pode avisar "O Windows protegeu o computador":
+  "Mais informações" > "Executar assim mesmo".
+
+
+>>> ATUALIZAÇÃO AUTOMÁTICA (configurar uma vez)
+  1. Crie uma conta no GitHub e um repositório, ex.: seu-usuario/LukClips
+  2. No lukclips.py, preencha a linha:  REPO_GITHUB = "seu-usuario/LukClips"
+  3. A cada versão nova: aumente VERSAO no lukclips.py (ex.: "3.1"),
+     rode GERAR_EXE.bat e depois PUBLICAR_VERSAO.bat
+  Quem tem o LukClips instalado recebe o aviso ao abrir e atualiza com um
+  clique. No rodapé do programa tem "procurar atualização".
+
+
+>>> COMO USAR
+  1. Cole o link (YouTube, Twitch, Kick, TikTok...) ou clique em "Arquivo".
+     Para vários vídeos: cole um link e clique "➕ Fila", repita.
+     O GERAR CORTES processa a fila inteira (dá pra deixar de madrugada
+     e marcar "Desligar o PC quando a fila acabar" na aba ⚙ Análise).
+  2. Escolha onde salvar.
+  3. Opções em abas:
+     🎬 Cortes  - quantidade, duração, qualidade da transcrição, nome do streamer
+     🎨 Visual  - layout (câmera em cima 50/50 ou 40/60, embaixo, sem câmera),
+                 estilo da legenda (Clássico, Neon roxo, Verde gamer,
+                 Caixa preta, Minimalista) e efeitos (zoom no pico,
+                 cortar silêncios, barra de progresso)
+     ⚙ Análise  - login do navegador, chat da live, movimento da tela,
+                 revisar antes de gerar, desligar o PC
+  4. GERAR CORTES.
+
+>>> REVISAR ANTES DE GERAR (ligado por padrão, com 1 vídeo)
+  Antes de renderizar, abre uma lista com os momentos escolhidos e algumas
+  reservas. Para cada um você pode:
+    - marcar/desmarcar (coluna ✓)
+    - mover início e fim (−5, −1, +1, +5 segundos)
+    - trocar o título
+    - corrigir palavras da legenda (uma linha por fala)
+    - ver a prévia do trecho
+  Com vários vídeos na fila a revisão desliga sozinha, pra rodar sem você.
+
+>>> POSTAR
+  Selecione um corte e clique "📤 Postar". Revise título, descrição e
+  hashtags; "Abrir e copiar" copia o texto, abre a página de envio no
+  navegador e a pasta com o vídeo. Arraste o vídeo e cole (Ctrl+V).
+  Cortes antigos: janela "📊 Desempenho" > "📤 Postar selecionado".
+
+>>> DESEMPENHO
+  Anote as views dos cortes postados. Com 6 ou mais do mesmo streamer,
+  "Salvar e aprender" ajusta o que pesa mais para ele.
+
+>>> CACHE
+  Vídeos baixados e transcrições ficam em _lukclips_cache (o tamanho aparece
+  no card 2). "🧹 Limpar cache" apaga só os vídeos ou tudo.
+
+>>> DEU ERRO?
+  A janela de erro tem "📋 Copiar detalhes": cole na conversa com o Claude.
+  O registro completo fica em %APPDATA%\LukClips\logs.
+
+Dê sempre os créditos ao criador e confira se ele permite cortes.

@@ -31,7 +31,7 @@ import momentos as M  # noqa: E402
 import visual as V  # noqa: E402
 
 APP = "LukClips"
-VERSAO = "3.0"
+VERSAO = "3.0.1"
 os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
 
 # No .exe sem console, stdout/stderr não existem e barras de progresso de
@@ -1715,7 +1715,7 @@ def iniciar_interface():
             super().__init__()
             self.cfg = carregar_config()
             PASTA_CACHE_UI.mkdir(parents=True, exist_ok=True)
-            self.title(f"{APP} — Fábrica de cortes")
+            self.title(f"{APP} v{VERSAO} — Fábrica de cortes")
             self.configure(bg=COR_FUNDO)
             # ajusta o tamanho da janela ao zoom do Windows (125%, 150%...)
             esc = max(1.0, self.winfo_fpixels("1i") / 96)
@@ -1738,6 +1738,7 @@ def iniciar_interface():
             self.after(300, self._checar_dependencias)
             self.after(600, self._calcular_cache)
             self.after(2500, self._procurar_atualizacao)
+            self.after(800, self._avisar_se_atualizou)
             self.report_callback_exception = self._erro_inesperado
             threading.excepthook = lambda a: self.fila.put(
                 ("erro", (f"Erro inesperado: {a.exc_value}",
@@ -2141,6 +2142,17 @@ def iniciar_interface():
                    "--accept-source-agreements --accept-package-agreements & pause")
             subprocess.Popen(["cmd", "/c", cmd], creationflags=0x00000010)  # nova janela
 
+        def _avisar_se_atualizou(self):
+            """Mostra uma vez 'atualizado' quando a versão muda."""
+            ja_usava = ARQ_CONFIG.exists()
+            cfg = carregar_config()
+            anterior = cfg.get("ultima_versao") or ("3.0" if ja_usava else None)
+            cfg["ultima_versao"] = VERSAO
+            salvar_config(cfg)
+            if anterior and anterior != VERSAO:
+                self._log(f"⬆ Atualizado da v{anterior} para a v{VERSAO}")
+                messagebox.showinfo(APP, f"LukClips atualizado para a v{VERSAO}! 🎉")
+
         def _erro_inesperado(self, tipo, valor, tb):
             detalhes = "".join(traceback.format_exception(tipo, valor, tb))
             logging.error("Erro na interface\n%s", detalhes)
@@ -2166,6 +2178,7 @@ def iniciar_interface():
                 "zoom_pico": bool(self.var_zoom.get()), "cortar_silencio": bool(self.var_silencio.get()),
                 "barra_progresso": bool(self.var_barra.get()), "revisar": bool(self.var_revisar.get()),
             }
+            cfg["ultima_versao"] = VERSAO
             salvar_config(cfg)
             run = dict(cfg)
             run["fonte"] = self.var_fonte.get()

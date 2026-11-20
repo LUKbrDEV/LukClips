@@ -32,7 +32,7 @@ import momentos as M  # noqa: E402
 import visual as V  # noqa: E402
 
 APP = "LukClips"
-VERSAO = "3.0.3"
+VERSAO = "3.1.0"
 os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
 
 # No .exe sem console, stdout/stderr não existem e barras de progresso de
@@ -894,7 +894,8 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
             destaque = self.frase_destaque(segs, P["gatilhos"])
             tag = re.sub(r"\W+", "", streamer.lower()) or "cortes"
             extras = " ".join(TAGS_PACOTE[p] for p in getattr(self, "pacotes", []) if p in TAGS_PACOTE)
-            hashtags = f"#{tag} {extras} #cortes #gameplay #fyp #viral".replace("  ", " ")
+            fixas = " ".join(t if t.startswith("#") else f"#{t}" for t in cfg.get("hashtags_fixas", "").split())
+            hashtags = " ".join(f"#{tag} {extras} {fixas} #cortes #gameplay #fyp #viral".split())
             descricao = (f"\"{destaque}\"\n\n" if destaque else "") + \
                 f"🎮 Créditos: {streamer} — assista a live completa no canal dele(a)!"
             escrever_post(pasta_clips / f"{nome}.txt", titulo, descricao, hashtags)
@@ -1028,12 +1029,14 @@ MODELOS = {"Rápido (base)": "base", "Equilibrado (small)": "small",
 DURACOES = {"Automática (20–90s)": (20, 90), "Curtos (15–40s)": (15, 40),
             "Médios (30–60s)": (30, 60), "Longos (45–120s)": (45, 120),
             "Fixa 30s": (30, 30), "Fixa 60s": (60, 60)}
+IDIOMAS = {"Português": "pt", "Inglês": "en", "Espanhol": "es", "Detectar sozinho": None}
 CONFIG_PADRAO = {
     "saida": str(Path.home() / "Videos" / "LukClips"),
     "cortes": 5, "duracao": "Automática (20–90s)", "modelo": "Equilibrado (small)",
     "usar_chat": True, "usar_movimento": True,
     "layout": "Câmera em cima (50/50)", "estilo_legenda": "Clássico (branco + amarelo)",
     "zoom_pico": False, "cortar_silencio": False, "barra_progresso": True, "revisar": True,
+    "idioma": "Português", "usar_gpu": True, "hashtags_fixas": "",
     "camera": "Automática", "navegador": "Nenhum", "streamer": "",
     "pular_inicio": 300, "marca": "Feito por LukDev",
 }
@@ -1214,51 +1217,380 @@ def iniciar_interface():
             self.destroy()
             self.ao_fim(None)
 
-    class JanelaDesempenho(tk.Toplevel):
+    # ------------------------------------------------------------------ componentes
+    def desenhar_icone(cv, nome, cor):
+        """Ícones simples desenhados (emoji não aparece direito em todo Windows)."""
+        cv.delete("all")
+        if nome == "novo":
+            cv.create_oval(2, 2, 8, 8, outline=cor, width=2)
+            cv.create_oval(2, 12, 8, 18, outline=cor, width=2)
+            cv.create_line(7, 7, 18, 16, fill=cor, width=2)
+            cv.create_line(7, 13, 18, 4, fill=cor, width=2)
+        elif nome == "fila":
+            for y in (5, 10, 15):
+                cv.create_line(7, y, 18, y, fill=cor, width=2)
+                cv.create_oval(2, y - 1, 4, y + 1, fill=cor, outline=cor)
+        elif nome == "biblioteca":
+            for x0, y0, x1, y1 in ((2, 2, 9, 10), (11, 2, 18, 7), (11, 9, 18, 18), (2, 12, 9, 18)):
+                cv.create_rectangle(x0, y0, x1, y1, outline=cor, width=2)
+        elif nome == "desempenho":
+            cv.create_line(2, 2, 2, 18, 18, 18, fill=cor, width=2)
+            cv.create_line(5, 14, 9, 9, 12, 12, 18, 5, fill=cor, width=2)
+        elif nome == "config":
+            cv.create_oval(6, 6, 14, 14, outline=cor, width=2)
+            for k in range(8):
+                a = math.radians(k * 45)
+                cv.create_line(10 + 6 * math.cos(a), 10 + 6 * math.sin(a),
+                               10 + 9 * math.cos(a), 10 + 9 * math.sin(a), fill=cor, width=2)
+
+    def ass_para_hex(c):
+        """'&H00BBGGRR' (cor do ASS) -> '#RRGGBB'."""
+        c = c.replace("&H", "").rjust(8, "0")[-6:]
+        return f"#{c[4:6]}{c[2:4]}{c[0:2]}"
+
+    class Chave(tk.Frame):
+        """Chave liga/desliga ligada a um BooleanVar."""
+
+        def __init__(self, master, texto, var, bg=COR_CARD):
+            super().__init__(master, bg=bg)
+            self.var = var
+            self.cv = tk.Canvas(self, width=40, height=24, bg=bg, highlightthickness=0, cursor="hand2")
+            self.cv.pack(side="left")
+            self.lbl = tk.Label(self, text=texto, bg=bg, fg=COR_TEXTO, font=("Segoe UI", 10), cursor="hand2")
+            self.lbl.pack(side="left", padx=(8, 0))
+            for w in (self.cv, self.lbl):
+                w.bind("<Button-1>", self._alternar)
+            var.trace_add("write", lambda *_: self._desenhar())
+            self._desenhar()
+
+        def _alternar(self, _e=None):
+            self.var.set(not self.var.get())
+
+        def _desenhar(self):
+            if not self.winfo_exists():
+                return
+            c = self.cv
+            c.delete("all")
+            on = bool(self.var.get())
+            cor = COR_DESTAQUE if on else "#2E2A44"
+            c.create_oval(1, 1, 23, 23, fill=cor, outline=cor)
+            c.create_oval(17, 1, 39, 23, fill=cor, outline=cor)
+            c.create_rectangle(12, 1, 28, 23, fill=cor, outline=cor)
+            x = 28 if on else 12
+            c.create_oval(x - 8, 4, x + 8, 20, fill="white" if on else "#8D88A3", outline="")
+            self.lbl.config(fg=COR_TEXTO if on else "#B9B4CC")
+
+    class Segmentos(tk.Frame):
+        """Botões lado a lado em que só um fica marcado (ligado a um StringVar)."""
+
+        def __init__(self, master, var, opcoes, bg=COR_CARD):
+            super().__init__(master, bg="#0E0D16", highlightthickness=1, highlightbackground="#2E2A44")
+            self.var = var
+            self.bts = {}
+            for valor, rot in opcoes:
+                b = tk.Label(self, text=rot, bg="#0E0D16", fg="#B9B4CC", font=("Segoe UI", 9, "bold"),
+                             padx=9, pady=7, cursor="hand2")
+                b.pack(side="left", padx=2, pady=2, fill="x", expand=True)
+                b.bind("<Button-1>", lambda e, v=valor: var.set(v))
+                self.bts[valor] = b
+            var.trace_add("write", lambda *_: self._atualizar())
+            self._atualizar()
+
+        def _atualizar(self):
+            if not self.winfo_exists():
+                return
+            for v, b in self.bts.items():
+                sel = v == self.var.get()
+                b.config(bg=COR_DESTAQUE if sel else "#0E0D16", fg="white" if sel else "#B9B4CC")
+
+    class EscolhaLayout(tk.Frame):
+        """Mini desenhos clicáveis de cada layout."""
+        CURTOS = {"Câmera em cima (50/50)": "Em cima", "Câmera em cima (40/60)": "40/60",
+                  "Câmera embaixo (50/50)": "Embaixo", "Sem câmera (fundo desfocado)": "Sem câmera"}
+
+        def __init__(self, master, var, bg=COR_CARD):
+            super().__init__(master, bg=bg)
+            self.var = var
+            self.cvs = {}
+            for nome, (pos, frac) in LAYOUTS.items():
+                f = tk.Frame(self, bg=bg)
+                f.pack(side="left", padx=(0, 10))
+                cv = tk.Canvas(f, width=54, height=90, bg=bg, highlightthickness=0, cursor="hand2")
+                cv.pack()
+                tk.Label(f, text=self.CURTOS.get(nome, nome), bg=bg, fg=COR_SUAVE,
+                         font=("Segoe UI", 8)).pack(pady=(3, 0))
+                cv.bind("<Button-1>", lambda e, n=nome: var.set(n))
+                self.cvs[nome] = (cv, pos, frac)
+            var.trace_add("write", lambda *_: self._desenhar())
+            self._desenhar()
+
+        def _desenhar(self):
+            if not self.winfo_exists():
+                return
+            for nome, (cv, pos, frac) in self.cvs.items():
+                cv.delete("all")
+                sel = nome == self.var.get()
+                cv.create_rectangle(1, 1, 53, 89, outline=COR_DESTAQUE2 if sel else "#2E2A44",
+                                    width=2 if sel else 1, fill="#1D1730" if sel else "#0E0D16")
+                x0, y0, x1, y1 = 6, 6, 48, 84
+                h = y1 - y0
+                if pos == "cima":
+                    m = y0 + h * frac
+                    cv.create_rectangle(x0, y0, x1, m - 1, fill="#5B4A8A", outline="")
+                    cv.create_rectangle(x0, m + 1, x1, y1, fill="#2A3A4D", outline="")
+                elif pos == "baixo":
+                    m = y0 + h * (1 - frac)
+                    cv.create_rectangle(x0, y0, x1, m - 1, fill="#2A3A4D", outline="")
+                    cv.create_rectangle(x0, m + 1, x1, y1, fill="#5B4A8A", outline="")
+                else:
+                    cv.create_rectangle(x0, y0, x1, y1, fill="#1A2230", outline="")
+                    cv.create_rectangle(x0, y0 + h * 0.34, x1, y0 + h * 0.66, fill="#2A3A4D", outline="")
+
+    def _texto_legenda(cv, cx, cy, e, tam, cima="OLHA ", baixo="ISSO"):
+        """Desenha 'OLHA ISSO' no estilo da legenda (contorno preto e palavra em destaque)."""
+        if not e["maiusc"]:
+            cima, baixo = cima.capitalize(), baixo.lower()
+        fonte = (e["fonte"] if e["fonte"] != "Segoe UI Semibold" else "Segoe UI", tam, "bold")
+        t1 = cv.create_text(0, 0, text=cima, font=fonte, anchor="w")
+        t2 = cv.create_text(0, 0, text=baixo, font=fonte, anchor="w")
+        w1 = cv.bbox(t1)[2] - cv.bbox(t1)[0]
+        w2 = cv.bbox(t2)[2] - cv.bbox(t2)[0]
+        cv.delete(t1, t2)
+        x = cx - (w1 + w2) / 2
+        if e["caixa"]:
+            cv.create_rectangle(x - 5, cy - tam, x + w1 + w2 + 5, cy + tam, fill="#000000", outline="")
+        else:
+            for dx, dy in ((-1, -1), (1, -1), (-1, 1), (1, 1), (0, 2)):
+                cv.create_text(x + dx, cy + dy, text=cima, font=fonte, anchor="w", fill="#000000")
+                cv.create_text(x + w1 + dx, cy + dy, text=baixo, font=fonte, anchor="w", fill="#000000")
+        cv.create_text(x, cy, text=cima, font=fonte, anchor="w", fill=ass_para_hex(e["cor"]))
+        cv.create_text(x + w1, cy, text=baixo, font=fonte, anchor="w", fill=ass_para_hex(e["destaque"]))
+
+    class EscolhaLegenda(tk.Frame):
+        """Amostras clicáveis de cada estilo de legenda."""
+
+        def __init__(self, master, var, bg=COR_CARD):
+            super().__init__(master, bg=bg)
+            self.var = var
+            self.cvs = {}
+            for i, nome in enumerate(ESTILOS_LEGENDA):
+                cv = tk.Canvas(self, width=112, height=40, bg=bg, highlightthickness=0, cursor="hand2")
+                cv.grid(row=i // 3, column=i % 3, padx=(0, 8), pady=(0, 8))
+                cv.bind("<Button-1>", lambda e, n=nome: var.set(n))
+                self.cvs[nome] = cv
+            self.lbl = tk.Label(self, text="", bg=bg, fg=COR_SUAVE, font=("Segoe UI", 8))
+            self.lbl.grid(row=9, column=0, columnspan=3, sticky="w")
+            var.trace_add("write", lambda *_: self._desenhar())
+            self.after(30, self._desenhar)
+
+        def _desenhar(self):
+            if not self.winfo_exists():
+                return
+            for nome, cv in self.cvs.items():
+                cv.delete("all")
+                sel = nome == self.var.get()
+                cv.create_rectangle(1, 1, 111, 39, outline=COR_DESTAQUE2 if sel else "#2E2A44",
+                                    width=2 if sel else 1, fill="#1D1730" if sel else "#0E0D16")
+                _texto_legenda(cv, 56, 20, ESTILOS_LEGENDA[nome], 9)
+            self.lbl.config(text=f"Estilo: {self.var.get()}")
+
+    class Previa(tk.Canvas):
+        """Celular com o layout e a legenda escolhidos (redesenha quando muda)."""
+
+        def __init__(self, master, app, bg=COR_CARD):
+            super().__init__(master, width=156, height=278, bg=bg, highlightthickness=0)
+            self.app = app
+            for v in (app.var_layout, app.var_estilo, app.var_barra):
+                v.trace_add("write", lambda *_: self.desenhar())
+            self.after(40, self.desenhar)
+
+        def desenhar(self):
+            if not self.winfo_exists():
+                return
+            self.delete("all")
+            x0, y0, x1, y1 = 6, 6, 150, 272
+            self.create_rectangle(x0 - 5, y0 - 5, x1 + 5, y1 + 5, fill="#050508", outline="#2B2840")
+            pos, frac = LAYOUTS.get(self.app.var_layout.get(), LAYOUTS[LAYOUT_PADRAO])
+            h = y1 - y0
+
+            def cam(a, b):
+                self.create_rectangle(x0, a, x1, b, fill="#2A1F45", outline="")
+                cx, alt = (x0 + x1) / 2, b - a
+                r = alt * 0.17
+                self.create_oval(cx - r, a + alt * 0.42 - r, cx + r, a + alt * 0.42 + r, fill="#5B4A8A", outline="")
+                topo = a + alt * 0.66   # ombros: metade de cima de uma elipse centrada na base
+                self.create_arc(cx - r * 2.3, topo, cx + r * 2.3, b + (b - topo), start=0, extent=180,
+                                fill="#5B4A8A", outline="", style="pieslice")
+
+            def jogo(a, b):
+                self.create_rectangle(x0, a, x1, b, fill="#1B2A3A", outline="")
+                cx = (x0 + x1) / 2
+                self.create_polygon(cx - 10, a + 4, cx + 10, a + 4, cx + 34, b, cx - 34, b, fill="#2A3A4D", outline="")
+                self.create_rectangle(cx - 12, b - (b - a) * 0.38, cx + 12, b - (b - a) * 0.22, fill="#EC4899",
+                                      outline="")
+
+            if pos == "cima":
+                m = y0 + h * frac
+                jogo(m, y1)
+                cam(y0, m)
+                emenda = m
+            elif pos == "baixo":
+                m = y0 + h * (1 - frac)
+                cam(m, y1)
+                jogo(y0, m)
+                emenda = m
+            else:
+                self.create_rectangle(x0, y0, x1, y1, fill="#141A24", outline="")
+                jogo(y0 + h * 0.34, y0 + h * 0.66)
+                emenda = y0 + h * 0.79
+            self.create_rectangle(x0, y1, x1, y1 + 5, fill="#050508", outline="")
+            # título no topo
+            self.create_rectangle(x0 + 22, y0 + 8, x1 - 22, y0 + 22, fill="#000000", outline="")
+            self.create_text((x0 + x1) / 2, y0 + 15, text="TÍTULO DO CORTE", fill="white", font=("Segoe UI", 6, "bold"))
+            e = ESTILOS_LEGENDA.get(self.app.var_estilo.get(), ESTILOS_LEGENDA[ESTILO_PADRAO])
+            _texto_legenda(self, (x0 + x1) / 2, emenda, e, 10, "ELE NÃO ", "ACREDITOU")
+            if self.app.var_barra.get():
+                self.create_rectangle(x0, y1 - 4, x0 + (x1 - x0) * 0.55, y1, fill=COR_DESTAQUE2, outline="")
+
+    ETAPAS = [("Baixar o vídeo", 22), ("Chat da live", 25.5), ("Transcrever a fala", 68.5),
+              ("Achar os melhores momentos", 80), ("Gerar os cortes", 100.01)]
+
+    class Etapas(tk.Frame):
+        """Lista de etapas: ✓ feitas, a atual girando, as próximas apagadas."""
+
+        def __init__(self, master, bg=COR_CARD):
+            super().__init__(master, bg=bg)
+            self.linhas = []
+            self.atual = -1
+            self.ativo = False
+            self.ang = 90
+            for nome, _ in ETAPAS:
+                f = tk.Frame(self, bg=bg)
+                f.pack(fill="x", pady=4)
+                cv = tk.Canvas(f, width=22, height=22, bg=bg, highlightthickness=0)
+                cv.pack(side="left")
+                lb = tk.Label(f, text=nome, bg=bg, fg="#8D88A3", font=("Segoe UI", 10))
+                lb.pack(side="left", padx=(10, 0))
+                dt = tk.Label(f, text="", bg=bg, fg=COR_DESTAQUE2, font=("Segoe UI", 9, "bold"))
+                dt.pack(side="right")
+                self.linhas.append((cv, lb, dt))
+            self.resetar()
+            self._animar()
+
+        def _icone(self, cv, est):
+            cv.delete("all")
+            if est == "feito":
+                cv.create_oval(1, 1, 21, 21, fill="#14532D", outline="")
+                cv.create_line(6, 11, 10, 15, 16, 7, fill="#86EFAC", width=2.5)
+            elif est == "atual":
+                cv.create_oval(3, 3, 19, 19, outline="#3B3456", width=3)
+                cv.create_arc(3, 3, 19, 19, start=self.ang, extent=110, style="arc", outline=COR_DESTAQUE2, width=3)
+            elif est == "erro":
+                cv.create_oval(1, 1, 21, 21, fill="#5A1D1D", outline="")
+                cv.create_line(7, 7, 15, 15, fill="#FCA5A5", width=2.5)
+                cv.create_line(15, 7, 7, 15, fill="#FCA5A5", width=2.5)
+            else:
+                cv.create_oval(2, 2, 20, 20, outline="#34304A", width=2)
+
+        def _estado(self, i, est, det=""):
+            cv, lb, dt = self.linhas[i]
+            self._icone(cv, est)
+            lb.config(fg=COR_TEXTO if est in ("feito", "atual", "erro") else "#8D88A3",
+                      font=("Segoe UI", 10, "bold" if est == "atual" else "normal"))
+            dt.config(text=det)
+
+        def resetar(self):
+            self.atual = -1
+            self.ativo = False
+            for i in range(len(ETAPAS)):
+                self._estado(i, "pend")
+
+        def atualizar(self, p, texto=""):
+            self.ativo = True
+            idx = next((i for i, (_, fim) in enumerate(ETAPAS) if p < fim), len(ETAPAS))
+            m = re.search(r"(\d+)%", texto or "")
+            for i in range(len(ETAPAS)):
+                est = "feito" if i < idx else ("atual" if i == idx else "pend")
+                self._estado(i, est, (m.group(1) + "%") if (i == idx and m) else "")
+            self.atual = idx
+
+        def concluir(self):
+            self.ativo = False
+            for i in range(len(ETAPAS)):
+                self._estado(i, "feito")
+
+        def parar(self, erro=False):
+            self.ativo = False
+            if 0 <= self.atual < len(ETAPAS):
+                self._estado(self.atual, "erro" if erro else "pend")
+
+        def _animar(self):
+            if not self.winfo_exists():
+                return
+            if self.ativo and 0 <= self.atual < len(ETAPAS):
+                self.ang = (self.ang - 24) % 360
+                self._icone(self.linhas[self.atual][0], "atual")
+            self.after(70, self._animar)
+
+    class Rolagem(tk.Frame):
+        """Área com barra de rolagem (e rodinha do mouse)."""
+
+        def __init__(self, master, bg=COR_FUNDO):
+            super().__init__(master, bg=bg)
+            self.cv = tk.Canvas(self, bg=bg, highlightthickness=0)
+            self.sb = ttk.Scrollbar(self, orient="vertical", command=self.cv.yview)
+            self.dentro = tk.Frame(self.cv, bg=bg)
+            self.item = self.cv.create_window(0, 0, window=self.dentro, anchor="nw")
+            self.cv.configure(yscrollcommand=self.sb.set)
+            self.cv.pack(side="left", fill="both", expand=True)
+            self.sb.pack(side="right", fill="y")
+            self.dentro.bind("<Configure>", lambda e: self.cv.configure(scrollregion=self.cv.bbox("all")))
+            self.cv.bind("<Configure>", lambda e: self.cv.itemconfigure(self.item, width=e.width))
+            self.bind("<Enter>", lambda e: self.bind_all("<MouseWheel>", self._roda))
+            self.bind("<Leave>", lambda e: self.unbind_all("<MouseWheel>"))
+
+        def _roda(self, e):
+            self.cv.yview_scroll(int(-e.delta / 120) or (-1 if e.delta > 0 else 1), "units")
+
+    class PainelDesempenho(tk.Frame):
         """Anota as views de cada corte postado; com isso o LukClips ajusta
-        o peso de cada sinal para cada streamer."""
+        o peso de cada sinal para cada streamer. (Agora é uma página da janela.)"""
 
         def __init__(self, master):
-            super().__init__(master)
-            self.title("Desempenho dos cortes")
-            self.configure(bg=COR_FUNDO)
-            self.geometry("820x520")
+            super().__init__(master, bg=COR_FUNDO)
             self.hist = carregar_historico()
-            tk.Label(self, text="Anote as visualizações dos cortes que você postou",
-                     bg=COR_FUNDO, fg=COR_TEXTO, font=("Segoe UI", 12, "bold")).pack(anchor="w", padx=14, pady=(12, 0))
-            tk.Label(self, text="Dê dois cliques na linha para digitar as views. Com 6 ou mais cortes "
-                                "anotados do mesmo streamer, o LukClips aprende o que dá certo com ele.",
-                     bg=COR_FUNDO, fg=COR_SUAVE, font=("Segoe UI", 9), wraplength=780,
-                     justify="left").pack(anchor="w", padx=14, pady=(2, 8))
             filtro = tk.Frame(self, bg=COR_FUNDO)
-            filtro.pack(fill="x", padx=14)
+            filtro.pack(fill="x")
             tk.Label(filtro, text="Streamer:", bg=COR_FUNDO, fg=COR_SUAVE).pack(side="left")
-            nomes = sorted({h.get("streamer", "") for h in self.hist if h.get("streamer")})
             self.var_st = tk.StringVar(value="Todos")
-            cb = ttk.Combobox(filtro, textvariable=self.var_st, state="readonly",
-                              values=["Todos"] + nomes, width=28)
-            cb.pack(side="left", padx=8)
-            cb.bind("<<ComboboxSelected>>", lambda e: self._preencher())
-            s = ttk.Style(self)
-            s.configure("Treeview", background=COR_CARD, fieldbackground=COR_CARD,
-                        foreground=COR_TEXTO, rowheight=26, borderwidth=0)
-            s.configure("Treeview.Heading", background=COR_CAMPO, foreground=COR_TEXTO)
-            s.map("Treeview", background=[("selected", COR_DESTAQUE)])
+            self.cb = ttk.Combobox(filtro, textvariable=self.var_st, state="readonly", values=["Todos"], width=28)
+            self.cb.pack(side="left", padx=8)
+            self.cb.bind("<<ComboboxSelected>>", lambda e: self._preencher())
+            tk.Label(filtro, text="Dê dois cliques numa linha para digitar as views. Com 6 ou mais cortes "
+                                  "anotados do mesmo streamer, o LukClips aprende o que dá certo com ele.",
+                     bg=COR_FUNDO, fg=COR_SUAVE, font=("Segoe UI", 9), wraplength=560,
+                     justify="left").pack(side="left", padx=(16, 0))
             cols = ("data", "streamer", "titulo", "views")
             self.tv = ttk.Treeview(self, columns=cols, show="headings")
-            for c, t, w in zip(cols, ("Data", "Streamer", "Título", "Views"), (90, 130, 430, 90)):
+            for c, t, w in zip(cols, ("Data", "Streamer", "Título", "Views"), (90, 140, 460, 90)):
                 self.tv.heading(c, text=t)
-                self.tv.column(c, width=w, anchor="w" if c != "views" else "e")
-            self.tv.pack(fill="both", expand=True, padx=14, pady=10)
+                self.tv.column(c, width=w, anchor="w" if c != "views" else "e", stretch=(c == "titulo"))
+            self.tv.pack(fill="both", expand=True, pady=12)
             self.tv.bind("<Double-1>", self._editar)
             base = tk.Frame(self, bg=COR_FUNDO)
-            base.pack(fill="x", padx=14, pady=(0, 12))
+            base.pack(fill="x")
             self.lbl = tk.Label(base, text="", bg=COR_FUNDO, fg=COR_SUAVE, font=("Segoe UI", 9))
             self.lbl.pack(side="left")
             ttk.Button(base, text="Salvar e aprender", style="Acao.TButton",
                        command=self._salvar).pack(side="right")
-            ttk.Button(base, text="📤 Postar selecionado", style="Sec.TButton",
+            ttk.Button(base, text="Postar selecionado", style="Sec.TButton",
                        command=self._postar).pack(side="right", padx=8)
+            self.recarregar()
+
+        def recarregar(self):
+            self.hist = carregar_historico()
+            nomes = sorted({h.get("streamer", "") for h in self.hist if h.get("streamer")})
+            self.cb.config(values=["Todos"] + nomes)
             self._preencher()
 
         def _preencher(self):
@@ -1281,7 +1613,7 @@ def iniciar_interface():
             i = int(sel[0])
             atual = self.hist[i].get("views")
             v = simpledialog.askinteger("Views", f"Quantas visualizações teve?\n\n{self.hist[i].get('titulo', '')}",
-                                        parent=self, minvalue=0, initialvalue=atual or 0)
+                                        parent=self.winfo_toplevel(), minvalue=0, initialvalue=atual or 0)
             if v is not None:
                 self.hist[i]["views"] = v
                 self._preencher()
@@ -1290,15 +1622,15 @@ def iniciar_interface():
         def _postar(self):
             sel = self.tv.selection()
             if not sel:
-                messagebox.showinfo(APP, "Selecione um corte na lista.", parent=self)
+                messagebox.showinfo(APP, "Selecione um corte na lista.", parent=self.winfo_toplevel())
                 return
             h = self.hist[int(sel[0])]
             if not Path(h.get("arquivo", "")).exists():
                 messagebox.showwarning(APP, "Não achei o arquivo desse corte (foi movido ou apagado?).",
-                                       parent=self)
+                                       parent=self.winfo_toplevel())
                 return
             salvar_historico(self.hist)
-            JanelaPostar(self, h)
+            JanelaPostar(self.winfo_toplevel(), h)
 
         def _salvar(self):
             salvar_historico(self.hist)
@@ -1847,8 +2179,8 @@ def iniciar_interface():
             esc = max(1.0, self.winfo_fpixels("1i") / 96)
             alt_tela = self.winfo_screenheight()
             larg_tela = self.winfo_screenwidth()
-            self.geometry(f"{min(int(1180 * esc), larg_tela - 40)}x{min(int(680 * esc), alt_tela - 80)}")
-            self.minsize(min(int(980 * esc), larg_tela - 40), min(int(600 * esc), alt_tela - 80))
+            self.geometry(f"{min(int(1280 * esc), larg_tela - 40)}x{min(int(800 * esc), alt_tela - 80)}")
+            self.minsize(min(int(1180 * esc), larg_tela - 40), min(int(700 * esc), alt_tela - 80))
             try:
                 self.icone = tk.PhotoImage(file=str(PASTA_RECURSOS / "lukclips.png"))
                 self.iconphoto(True, self.icone)
@@ -1858,11 +2190,18 @@ def iniciar_interface():
             self.cancel = threading.Event()
             self.rodando = False
             self.ultima_pasta = None
+            self.cortes_info, self.arquivos, self.fila_itens = [], [], []
+            self.thumbs, self.thumb_lbls = {}, {}
+            self._cache_txt = "calculando..."
+            self._registro_grande = False
             self._estilos()
+            self._vars()
             self._montar()
+            self._mostrar("novo")
             self.after(80, self._processar_fila)
             self.after(300, self._checar_dependencias)
             self.after(600, self._calcular_cache)
+            self.after(900, self._checar_gpu)
             self.after(2500, self._procurar_atualizacao)
             self._ja_avisou = set()
             self.after(2 * 3600 * 1000, self._procurar_periodico)
@@ -1879,13 +2218,6 @@ def iniciar_interface():
             s.theme_use("clam")
             s.configure(".", background=COR_FUNDO, foreground=COR_TEXTO, font=("Segoe UI", 10))
             s.configure("Card.TFrame", background=COR_CARD)
-            s.configure("TNotebook", background=COR_CARD, borderwidth=1, tabmargins=(0, 0, 0, 0),
-                        bordercolor=COR_BORDA, lightcolor=COR_CARD, darkcolor=COR_CARD)
-            s.configure("TNotebook.Tab", background=COR_CAMPO, foreground=COR_SUAVE, padding=(14, 6),
-                        borderwidth=0, font=("Segoe UI", 9, "bold"), bordercolor=COR_BORDA,
-                        lightcolor=COR_CAMPO, darkcolor=COR_CAMPO)
-            s.map("TNotebook.Tab", background=[("selected", COR_DESTAQUE), ("active", COR_BORDA)],
-                  foreground=[("selected", "white")])
             s.configure("TLabel", background=COR_CARD, foreground=COR_TEXTO)
             s.configure("Rot.TLabel", background=COR_CARD, foreground=COR_SUAVE, font=("Segoe UI", 9))
             s.configure("TEntry", fieldbackground=COR_CAMPO, foreground=COR_TEXTO,
@@ -1907,305 +2239,608 @@ def iniciar_interface():
             s.configure("Acao.TButton", background=COR_DESTAQUE, foreground="white",
                         font=("Segoe UI", 10, "bold"), padding=(16, 8), borderwidth=0)
             s.map("Acao.TButton", background=[("active", COR_DESTAQUE2), ("disabled", "#3A3A48")])
-            s.configure("Grande.TButton", background=COR_DESTAQUE, foreground="white",
-                        font=("Segoe UI", 13, "bold"), padding=(20, 14), borderwidth=0)
-            s.map("Grande.TButton", background=[("active", COR_DESTAQUE2)])
-            s.configure("Parar.TButton", background="#E5484D", foreground="white",
-                        font=("Segoe UI", 13, "bold"), padding=(20, 14), borderwidth=0)
-            s.map("Parar.TButton", background=[("active", "#F06A6E")])
+            s.configure("MiniAcao.TButton", background=COR_DESTAQUE, foreground="white",
+                        font=("Segoe UI", 9, "bold"), padding=(8, 5), borderwidth=0)
+            s.map("MiniAcao.TButton", background=[("active", COR_DESTAQUE2)])
             s.configure("Sec.TButton", background=COR_CAMPO, foreground=COR_TEXTO,
                         padding=(12, 7), borderwidth=0)
             s.map("Sec.TButton", background=[("active", COR_BORDA)])
-            s.configure("Horizontal.TProgressbar", troughcolor=COR_CAMPO, background=COR_DESTAQUE,
-                        bordercolor=COR_CAMPO, lightcolor=COR_DESTAQUE, darkcolor=COR_DESTAQUE,
-                        thickness=12)
+            s.configure("Mini.TButton", background=COR_CAMPO, foreground=COR_TEXTO,
+                        font=("Segoe UI", 9), padding=(8, 5), borderwidth=0)
+            s.map("Mini.TButton", background=[("active", COR_BORDA)])
+            s.configure("Horizontal.TProgressbar", troughcolor="#262338", background=COR_DESTAQUE2,
+                        bordercolor="#262338", lightcolor=COR_DESTAQUE2, darkcolor=COR_DESTAQUE2,
+                        thickness=8)
+            s.configure("Vertical.TScrollbar", background=COR_CAMPO, troughcolor=COR_FUNDO,
+                        bordercolor=COR_FUNDO, arrowcolor=COR_SUAVE, lightcolor=COR_CAMPO, darkcolor=COR_CAMPO)
+            s.configure("Treeview", background=COR_CARD, fieldbackground=COR_CARD,
+                        foreground=COR_TEXTO, rowheight=28, borderwidth=0)
+            s.configure("Treeview.Heading", background=COR_CAMPO, foreground=COR_TEXTO)
+            s.map("Treeview", background=[("selected", COR_DESTAQUE)])
 
-        def _card(self, titulo, coluna):
-            """Card com borda fina, colocado em cima do fundo desenhado."""
-            borda = tk.Frame(self.cv, bg="#2B2B3D")
-            f = ttk.Frame(borda, style="Card.TFrame", padding=14)
-            f.pack(fill="both", expand=True, padx=1, pady=1)
+        def _vars(self):
+            c = self.cfg
+            self.var_saida = tk.StringVar(value=c["saida"])
+            self.var_cortes = tk.StringVar(value=str(c["cortes"]))
+            self.var_dur = tk.StringVar(value=c["duracao"])
+            self.var_chat = tk.BooleanVar(value=c.get("usar_chat", True))
+            self.var_mov = tk.BooleanVar(value=c.get("usar_movimento", True))
+            self.var_modelo = tk.StringVar(value=c["modelo"])
+            self.var_cam = tk.StringVar(value=c["camera"])
+            self.var_nav = tk.StringVar(value=c["navegador"])
+            self.var_streamer = tk.StringVar(value=c["streamer"])
+            self.var_pular = tk.StringVar(value=str(c["pular_inicio"] // 60))
+            self.var_marca = tk.StringVar(value=c["marca"])
+            self.var_layout = tk.StringVar(value=c["layout"])
+            self.var_estilo = tk.StringVar(value=c["estilo_legenda"])
+            self.var_zoom = tk.BooleanVar(value=c["zoom_pico"])
+            self.var_silencio = tk.BooleanVar(value=c["cortar_silencio"])
+            self.var_barra = tk.BooleanVar(value=c["barra_progresso"])
+            self.var_revisar = tk.BooleanVar(value=c["revisar"])
+            self.var_desligar = tk.BooleanVar(value=False)
+            self.var_idioma = tk.StringVar(value=c.get("idioma", "Português"))
+            self.var_gpu = tk.BooleanVar(value=c.get("usar_gpu", True))
+            self.var_hashtags = tk.StringVar(value=c.get("hashtags_fixas", ""))
+
+        # ---------------- pedacinhos reutilizados
+        def _card(self, pai, titulo=None):
+            f = tk.Frame(pai, bg=COR_CARD, highlightthickness=1, highlightbackground="#262338",
+                         padx=18, pady=16)
             if titulo:
-                ttk.Label(f, text=titulo, font=("Segoe UI", 11, "bold")).pack(anchor="w", pady=(0, 8))
-            item = self.cv.create_window(0, 0, window=borda, anchor="nw")
-            (self.cards_esq if coluna == "esq" else self.cards_dir).append((borda, item))
+                tk.Label(f, text=titulo, bg=COR_CARD, fg=COR_TEXTO,
+                         font=("Segoe UI", 11, "bold")).pack(anchor="w", pady=(0, 8))
             return f
 
+        def _rotulo(self, pai, texto, topo=0):
+            tk.Label(pai, text=texto.upper(), bg=COR_CARD, fg="#9D98B3",
+                     font=("Segoe UI", 8, "bold")).pack(anchor="w", pady=(topo, 6))
+
+        def _cabecalho(self, pg, titulo, sub):
+            f = tk.Frame(pg, bg=COR_FUNDO)
+            f.pack(fill="x", pady=(0, 16))
+            tk.Label(f, text=titulo, bg=COR_FUNDO, fg="#F4F2FF", font=("Segoe UI", 20, "bold")).pack(anchor="w")
+            tk.Label(f, text=sub, bg=COR_FUNDO, fg="#9D98B3", font=("Segoe UI", 10)).pack(anchor="w")
+            return f
+
+        def _link(self, pai, texto, cmd, bg=COR_CARD):
+            lb = tk.Label(pai, text=texto, bg=bg, fg=COR_DESTAQUE2, cursor="hand2",
+                          font=("Segoe UI", 9, "underline"))
+            lb.bind("<Button-1>", lambda e: cmd())
+            return lb
+
+        # ---------------- estrutura
         def _montar(self):
-            self.cards_esq, self.cards_dir = [], []
-            self.cv = tk.Canvas(self, highlightthickness=0, bd=0, bg=COR_FUNDO)
-            self.cv.pack(fill="both", expand=True)
-            self.img_fundo = None
-            self.cv.create_image(0, 0, anchor="nw", tags="fundo")
+            self._lateral()
+            tk.Frame(self, bg="#1F1D2C", width=1).pack(side="left", fill="y")
+            self.area = tk.Frame(self, bg=COR_FUNDO)
+            self.area.pack(side="left", fill="both", expand=True)
+            self.paginas = {k: tk.Frame(self.area, bg=COR_FUNDO)
+                            for k in ("novo", "fila", "biblioteca", "desempenho", "config")}
+            self._pagina_novo(self.paginas["novo"])
+            self._pagina_fila(self.paginas["fila"])
+            self._pagina_biblioteca(self.paginas["biblioteca"])
+            self._cabecalho(self.paginas["desempenho"], "Desempenho",
+                            "Anote as views dos cortes postados e o LukClips aprende com cada streamer.")
+            self.painel_desemp = PainelDesempenho(self.paginas["desempenho"])
+            self.painel_desemp.pack(fill="both", expand=True)
+            self._pagina_config(self.paginas["config"])
 
-            # cabeçalho desenhado no próprio fundo (logo e título com profundidade)
+        def _lateral(self):
+            lat = tk.Frame(self, bg="#0F0E17", width=236)
+            lat.pack(side="left", fill="y")
+            lat.pack_propagate(False)
+            topo = tk.Frame(lat, bg="#0F0E17")
+            topo.pack(fill="x", padx=20, pady=(22, 26))
             try:
-                V.gerar_logo(58, PASTA_CACHE_UI / "logo.png")
-                self.img_logo = tk.PhotoImage(file=str(PASTA_CACHE_UI / "logo.png"))
-                self.cv.create_image(24, 18, anchor="nw", image=self.img_logo, tags="cab")
+                V.gerar_logo(34, PASTA_CACHE_UI / "logo_menu.png")
+                self.img_logo = tk.PhotoImage(file=str(PASTA_CACHE_UI / "logo_menu.png"))
+                tk.Label(topo, image=self.img_logo, bg="#0F0E17").pack(side="left")
             except Exception:
-                self.cv.create_text(40, 46, text="✂", fill=COR_DESTAQUE2, font=("Segoe UI Emoji", 26), tags="cab")
-            fonte_tit = ("Segoe UI", 24, "bold")
-            for i, cor in enumerate(["#1A0B33", "#240F45", "#2E1457", "#3A1A6B", "#4A2385"]):
-                d = 5 - i
-                self.cv.create_text(96 + d * 0.6, 14 + d, text="LukClips", anchor="nw", fill=cor,
-                                    font=fonte_tit, tags="cab")
-            self.cv.create_text(96, 14, text="LukClips", anchor="nw", fill="#F4F2FF", font=fonte_tit, tags="cab")
-            self.cv.create_text(98, 58, anchor="nw", fill="#B9B4CC", font=("Segoe UI", 9), tags="cab",
-                                text="Transforma lives e vídeos longos em cortes virais automaticamente")
-            self.lbl_dep = tk.Label(self.cv, text="", bg="#1B1B26", fg=COR_SUAVE, font=("Segoe UI", 9),
-                                    padx=10, pady=4)
-            self.item_dep = self.cv.create_window(0, 30, window=self.lbl_dep, anchor="ne")
-            self.lbl_ver = tk.Label(self.cv, text=f"v{VERSAO} · procurando atualização...", bg="#1B1B26",
-                                    fg=COR_SUAVE, font=("Segoe UI", 9), padx=10, pady=4, cursor="hand2")
+                pass
+            tk.Label(topo, text="LukClips", bg="#0F0E17", fg="#F4F2FF",
+                     font=("Segoe UI", 16, "bold")).pack(side="left", padx=(10, 0))
+            self.nav = {}
+            for chave, texto in (("novo", "Novo corte"), ("fila", "Fila"), ("biblioteca", "Biblioteca"),
+                                 ("desempenho", "Desempenho"), ("config", "Configurações")):
+                row = tk.Frame(lat, bg="#0F0E17", cursor="hand2")
+                row.pack(fill="x", padx=12, pady=2)
+                icv = tk.Canvas(row, width=20, height=20, bg="#0F0E17", highlightthickness=0)
+                icv.pack(side="left", padx=(12, 12), pady=12)
+                lbl = tk.Label(row, text=texto, bg="#0F0E17", fg="#B9B4CC", font=("Segoe UI", 10))
+                lbl.pack(side="left")
+                if chave == "fila":
+                    self.badge_fila = tk.Label(row, text="", bg="#2E2747", fg="#DDD6FE",
+                                               font=("Segoe UI", 8, "bold"), padx=7)
+                for w in (row, icv, lbl):
+                    w.bind("<Button-1>", lambda e, k=chave: self._mostrar(k))
+                    w.bind("<Enter>", lambda e, k=chave: self._hover(k, True))
+                    w.bind("<Leave>", lambda e, k=chave: self._hover(k, False))
+                self.nav[chave] = (row, icv, lbl)
+            base = tk.Frame(lat, bg="#0F0E17")
+            base.pack(side="bottom", fill="x", padx=20, pady=18)
+            self.lbl_ver = tk.Label(base, text=f"v{VERSAO} · procurando atualização...", bg="#17151F",
+                                    fg=COR_SUAVE, font=("Segoe UI", 9), padx=10, pady=6, cursor="hand2",
+                                    wraplength=180, justify="left")
+            self.lbl_ver.pack(anchor="w", fill="x")
             self.lbl_ver.bind("<Button-1>", lambda e: self._procurar_atualizacao(manual=True))
-            self.item_ver = self.cv.create_window(0, 30, window=self.lbl_ver, anchor="ne")
-            # rodapé
-            self.cv.create_text(0, 0, text=f"v{VERSAO}  ·  procurar atualização", anchor="sw", fill="#6A6680",
-                                font=("Segoe UI", 8, "underline"), tags="rod_v")
-            self.cv.tag_bind("rod_v", "<Button-1>", lambda e: self._procurar_atualizacao(manual=True))
-            self.cv.tag_bind("rod_v", "<Enter>", lambda e: self.cv.configure(cursor="hand2"))
-            self.cv.tag_bind("rod_v", "<Leave>", lambda e: self.cv.configure(cursor=""))
-            self.cv.create_text(0, 0, text="Feito por LukDev", anchor="se", fill="#8A85A0",
-                                font=("Segoe UI", 8), tags="rod_l")
+            tk.Label(base, text="Feito por LukDev", bg="#0F0E17", fg="#77728D",
+                     font=("Segoe UI", 8)).pack(anchor="w", pady=(10, 0))
 
-            # ---------------- coluna da esquerda
-            c = self._card("1. Link do vídeo ou arquivo", "esq")
-            linha = ttk.Frame(c, style="Card.TFrame")
-            linha.pack(fill="x")
+        def _hover(self, k, dentro):
+            if getattr(self, "pagina_atual", None) == k:
+                return
+            row, icv, lbl = self.nav[k]
+            cor = "#17151F" if dentro else "#0F0E17"
+            for w in (row, icv, lbl):
+                w.config(bg=cor)
+
+        def _mostrar(self, k):
+            for pg in self.paginas.values():
+                pg.pack_forget()
+            self.paginas[k].pack(fill="both", expand=True, padx=28, pady=22)
+            self.pagina_atual = k
+            for nome, (row, icv, lbl) in self.nav.items():
+                ativo = nome == k
+                cor = "#221B3A" if ativo else "#0F0E17"
+                for w in (row, icv, lbl):
+                    w.config(bg=cor)
+                lbl.config(fg="#F4F2FF" if ativo else "#B9B4CC",
+                           font=("Segoe UI", 10, "bold" if ativo else "normal"))
+                desenhar_icone(icv, nome, COR_DESTAQUE2 if ativo else "#8D88A3")
+            if k == "biblioteca":
+                self.after(10, self._carregar_biblioteca)
+            elif k == "desempenho":
+                self.painel_desemp.recarregar()
+            elif k == "config":
+                self._calcular_cache()
+
+        # ---------------- página: Novo corte
+        def _pagina_novo(self, pg):
+            cab = self._cabecalho(pg, "Novo corte", "Cole o link, escolha o estilo e gere.")
+            self.lbl_dep = tk.Label(cab, text="", bg=COR_FUNDO, fg=COR_SUAVE, font=("Segoe UI", 9))
+            self.lbl_dep.place(relx=1.0, rely=0.0, anchor="ne")
+
+            c = self._card(pg)
+            c.pack(fill="x", pady=(0, 16))
+            lin = tk.Frame(c, bg=COR_CARD)
+            lin.pack(fill="x")
+            caixa = tk.Frame(lin, bg="#0E0D16", highlightthickness=1, highlightbackground=COR_DESTAQUE,
+                             highlightcolor=COR_DESTAQUE)
+            caixa.pack(side="left", fill="x", expand=True)
+            self.badge = tk.Label(caixa, text="  aguardando link  ", bg=COR_CAMPO, fg=COR_SUAVE,
+                                  font=("Segoe UI", 9, "bold"), padx=6, pady=2)
+            self.badge.pack(side="left", padx=(8, 4), pady=8)
             self.var_fonte = tk.StringVar()
             self.var_fonte.trace_add("write", lambda *_: self._atualizar_plataforma())
-            ent = ttk.Entry(linha, textvariable=self.var_fonte, font=("Segoe UI", 11))
-            ent.pack(side="left", fill="x", expand=True)
+            ent = tk.Entry(caixa, textvariable=self.var_fonte, bg="#0E0D16", fg=COR_TEXTO,
+                           insertbackground=COR_TEXTO, relief="flat", font=("Segoe UI", 11),
+                           highlightthickness=0)
+            ent.pack(side="left", fill="x", expand=True, padx=(4, 8), ipady=6)
             ent.bind("<Button-3>", lambda e: self._colar())
-            ttk.Button(linha, text="Colar", style="Sec.TButton",
-                       command=self._colar).pack(side="left", padx=(8, 0))
-            ttk.Button(linha, text="📁 Arquivo", style="Sec.TButton",
-                       command=self._escolher_arquivo).pack(side="left", padx=(8, 0))
-            ttk.Button(linha, text="➕ Fila", style="Sec.TButton",
-                       command=self._adicionar_fila).pack(side="left", padx=(8, 0))
-            info = ttk.Frame(c, style="Card.TFrame")
+            for txt, cmd in (("Colar", self._colar), ("Arquivo", self._escolher_arquivo),
+                             ("+ Fila", self._adicionar_fila)):
+                ttk.Button(lin, text=txt, style="Sec.TButton", command=cmd).pack(side="left", padx=(8, 0), ipady=4)
+            info = tk.Frame(c, bg=COR_CARD)
             info.pack(fill="x", pady=(10, 0))
-            ttk.Label(info, text="Plataforma:", style="Rot.TLabel").pack(side="left")
-            self.badge = tk.Label(info, text="  aguardando link  ", bg=COR_CAMPO, fg=COR_SUAVE,
-                                  font=("Segoe UI", 9, "bold"), padx=8, pady=2)
-            self.badge.pack(side="left", padx=8)
-            # fila de vídeos (aparece quando tem item)
-            self.fila_itens = []
-            self.fr_fila = ttk.Frame(c, style="Card.TFrame")
-            topo_f = ttk.Frame(self.fr_fila, style="Card.TFrame")
-            topo_f.pack(fill="x", pady=(10, 4))
-            self.lbl_fila = ttk.Label(topo_f, text="Fila", style="Rot.TLabel")
-            self.lbl_fila.pack(side="left")
-            ttk.Button(topo_f, text="Limpar", style="Sec.TButton",
-                       command=self._limpar_fila).pack(side="right")
-            ttk.Button(topo_f, text="Remover", style="Sec.TButton",
-                       command=self._remover_fila).pack(side="right", padx=6)
-            self.lst_fila = tk.Listbox(self.fr_fila, height=3, bg=COR_FUNDO, fg=COR_TEXTO, relief="flat",
-                                       highlightthickness=0, font=("Segoe UI", 9),
-                                       selectbackground=COR_DESTAQUE, activestyle="none")
-            self.lst_fila.pack(fill="x")
+            self.lbl_salvar = tk.Label(info, text="", bg=COR_CARD, fg="#8D88A3", font=("Segoe UI", 9))
+            self.lbl_salvar.pack(side="left")
+            self._link(info, "trocar pasta", self._escolher_pasta).pack(side="left", padx=(10, 0))
+            self._link(info, "limpar cache", self._limpar_cache).pack(side="left", padx=(10, 0))
+            self.var_saida.trace_add("write", lambda *_: self._texto_salvar())
+            self._texto_salvar()
 
-            c = self._card("2. Onde salvar os cortes", "esq")
-            linha = ttk.Frame(c, style="Card.TFrame")
-            linha.pack(fill="x")
-            self.var_saida = tk.StringVar(value=self.cfg["saida"])
-            ttk.Entry(linha, textvariable=self.var_saida).pack(side="left", fill="x", expand=True)
-            ttk.Button(linha, text="Escolher pasta", style="Sec.TButton",
-                       command=self._escolher_pasta).pack(side="left", padx=(8, 0))
-            lin_cache = ttk.Frame(c, style="Card.TFrame")
-            lin_cache.pack(fill="x", pady=(8, 0))
-            self.lbl_cache = ttk.Label(lin_cache, text="💾 Cache: calculando...", style="Rot.TLabel")
-            self.lbl_cache.pack(side="left")
-            ttk.Button(lin_cache, text="🧹 Limpar cache", style="Sec.TButton",
-                       command=self._limpar_cache).pack(side="right")
-
-            c = self._card("3. Opções", "esq")
-            self.var_cortes = tk.StringVar(value=str(self.cfg["cortes"]))
-            self.var_dur = tk.StringVar(value=self.cfg["duracao"])
-            self.var_chat = tk.BooleanVar(value=self.cfg.get("usar_chat", True))
-            self.var_mov = tk.BooleanVar(value=self.cfg.get("usar_movimento", True))
-            self.var_modelo = tk.StringVar(value=self.cfg["modelo"])
-            self.var_cam = tk.StringVar(value=self.cfg["camera"])
-            self.var_nav = tk.StringVar(value=self.cfg["navegador"])
-            self.var_streamer = tk.StringVar(value=self.cfg["streamer"])
-            self.var_pular = tk.StringVar(value=str(self.cfg["pular_inicio"] // 60))
-            self.var_marca = tk.StringVar(value=self.cfg["marca"])
-            self.var_layout = tk.StringVar(value=self.cfg["layout"])
-            self.var_estilo = tk.StringVar(value=self.cfg["estilo_legenda"])
-            self.var_zoom = tk.BooleanVar(value=self.cfg["zoom_pico"])
-            self.var_silencio = tk.BooleanVar(value=self.cfg["cortar_silencio"])
-            self.var_barra = tk.BooleanVar(value=self.cfg["barra_progresso"])
-            self.var_revisar = tk.BooleanVar(value=self.cfg["revisar"])
-            self.var_desligar = tk.BooleanVar(value=False)
-
-            abas = ttk.Notebook(c)
-            abas.pack(fill="x")
-
-            def nova_aba(nome):
-                g = ttk.Frame(abas, style="Card.TFrame", padding=(2, 8, 2, 2))
-                for i in range(3):
-                    g.columnconfigure(i, weight=1, uniform="op")
-                abas.add(g, text=nome)
-                return g
-
-            def campo(g, lin, col, rotulo, widget_fn):
-                f = ttk.Frame(g, style="Card.TFrame")
-                f.grid(row=lin, column=col, sticky="ew", padx=6, pady=5)
-                ttk.Label(f, text=rotulo, style="Rot.TLabel").pack(anchor="w")
-                w = widget_fn(f)
-                w.pack(fill="x", pady=(3, 0))
-                return w
-
-            def caixas(g, lin, col, rotulo, itens, colspan=1):
-                f = ttk.Frame(g, style="Card.TFrame")
-                f.grid(row=lin, column=col, columnspan=colspan, sticky="ew", padx=6, pady=5)
-                ttk.Label(f, text=rotulo, style="Rot.TLabel").pack(anchor="w")
-                for texto, var in itens:
-                    tk.Checkbutton(f, text=texto, variable=var, bg=COR_CARD, fg=COR_TEXTO,
-                                   selectcolor=COR_CAMPO, activebackground=COR_CARD,
-                                   activeforeground=COR_TEXTO, font=("Segoe UI", 9),
-                                   highlightthickness=0, bd=0).pack(anchor="w", pady=(2, 0))
-
-            g = nova_aba("🎬 Cortes")
-            campo(g, 0, 0, "Quantidade de cortes",
-                  lambda f: ttk.Spinbox(f, from_=1, to=30, textvariable=self.var_cortes, width=6))
-            campo(g, 0, 1, "Duração dos cortes",
-                  lambda f: ttk.Combobox(f, textvariable=self.var_dur, state="readonly", values=list(DURACOES)))
-            campo(g, 0, 2, "Transcrição (Whisper)",
-                  lambda f: ttk.Combobox(f, textvariable=self.var_modelo, state="readonly", values=list(MODELOS)))
-            campo(g, 1, 0, "Ignorar os primeiros (min)",
-                  lambda f: ttk.Spinbox(f, from_=0, to=120, textvariable=self.var_pular, width=6))
-            campo(g, 1, 1, "Nome do streamer (créditos)", lambda f: ttk.Entry(f, textvariable=self.var_streamer))
-            campo(g, 1, 2, "Marca d'água (pequena)", lambda f: ttk.Entry(f, textvariable=self.var_marca))
-
-            g = nova_aba("🎨 Visual")
-            campo(g, 0, 0, "Layout",
-                  lambda f: ttk.Combobox(f, textvariable=self.var_layout, state="readonly", values=list(LAYOUTS)))
-            campo(g, 0, 1, "Estilo da legenda",
-                  lambda f: ttk.Combobox(f, textvariable=self.var_estilo, state="readonly",
-                                         values=list(ESTILOS_LEGENDA)))
-            campo(g, 0, 2, "Achar a câmera",
-                  lambda f: ttk.Combobox(f, textvariable=self.var_cam, state="readonly",
-                                         values=["Automática", "Marcar manualmente"]))
-            caixas(g, 1, 0, "Efeitos", [("Zoom rápido no pico do momento", self.var_zoom),
-                                        ("Cortar os silêncios", self.var_silencio),
-                                        ("Barra de progresso embaixo", self.var_barra)], colspan=3)
-
-            g = nova_aba("⚙ Análise")
-            campo(g, 0, 0, "Login do navegador (YouTube)",
-                  lambda f: ttk.Combobox(f, textvariable=self.var_nav, state="readonly",
-                                         values=["Nenhum", "Firefox", "Chrome", "Edge", "Brave", "Opera"]))
-            caixas(g, 0, 1, "Sinais", [("Usar o chat da live", self.var_chat),
-                                       ("Analisar o movimento da tela", self.var_mov)])
-            caixas(g, 0, 2, "Fluxo", [("Revisar antes de gerar", self.var_revisar),
-                                      ("Desligar o PC no fim da fila", self.var_desligar)])
-
-            self.lbl_dica = ttk.Label(c, text="Nome do streamer vazio = usa o nome do canal. YouTube pedindo "
-                                              "login? Escolha o navegador na aba ⚙ Análise.",
-                                      style="Rot.TLabel", wraplength=600)
-            self.lbl_dica.pack(anchor="w", padx=6, pady=(6, 0))
-
-            # ---------------- coluna da direita
-            self.btn = Botao3D(self.cv, "✂  GERAR CORTES", self._iniciar_ou_parar)
-
-            c = self._card(None, "dir")
-            self.lbl_status = ttk.Label(c, text="Pronto para começar.", font=("Segoe UI", 10, "bold"),
-                                        wraplength=380)
-            self.lbl_status.pack(anchor="w")
-            self.barra = ttk.Progressbar(c, mode="determinate", maximum=100)
-            self.barra.pack(fill="x", pady=(8, 10))
-            res = ttk.Frame(c, style="Card.TFrame")
-            res.pack(side="bottom", fill="x", pady=(10, 0))
-            ttk.Label(res, text="Cortes prontos (2 cliques abre o vídeo)", style="Rot.TLabel").pack(anchor="w")
-            self.lista = tk.Listbox(res, height=5, bg=COR_FUNDO, fg=COR_TEXTO,
-                                    relief="flat", highlightthickness=0, font=("Segoe UI", 9),
-                                    selectbackground=COR_DESTAQUE, activestyle="none")
-            self.lista.pack(fill="x", pady=(4, 6))
-            self.lista.bind("<Double-Button-1>", self._abrir_corte)
-            botoes = ttk.Frame(res, style="Card.TFrame")
-            botoes.pack(fill="x")
-            self.btn_postar = ttk.Button(botoes, text="📤 Postar", style="Acao.TButton",
-                                         command=self._postar_selecionado, state="disabled")
-            self.btn_postar.pack(side="left", fill="x", expand=True)
-            self.btn_pasta = ttk.Button(botoes, text="📂 Pasta", style="Sec.TButton",
-                                        command=self._abrir_pasta, state="disabled")
-            self.btn_pasta.pack(side="left", fill="x", expand=True, padx=(6, 0))
-            ttk.Button(botoes, text="📊 Desempenho", style="Sec.TButton",
-                       command=lambda: JanelaDesempenho(self)).pack(side="left", fill="x",
-                                                                    expand=True, padx=(6, 0))
-            self.arquivos = []
-            self.cortes_info = []
-            corpo = ttk.Frame(c, style="Card.TFrame")
+            corpo = tk.Frame(pg, bg=COR_FUNDO)
             corpo.pack(fill="both", expand=True)
-            self.txt = tk.Text(corpo, height=4, bg=COR_FUNDO, fg="#B8B8C8", relief="flat",
+            corpo.columnconfigure(0, weight=5)
+            corpo.columnconfigure(1, weight=0)
+            corpo.columnconfigure(2, weight=4, minsize=300)
+            corpo.rowconfigure(0, weight=1)
+
+            # estilo
+            est = self._card(corpo)
+            est.grid(row=0, column=0, sticky="nsew", padx=(0, 16))
+            f1 = tk.Frame(est, bg=COR_CARD)
+            f1.pack(fill="x")
+            col_q = tk.Frame(f1, bg=COR_CARD)
+            col_q.pack(side="left", padx=(0, 22), anchor="n")
+            self._rotulo(col_q, "Cortes")
+            stp = tk.Frame(col_q, bg="#0E0D16", highlightthickness=1, highlightbackground="#2E2A44")
+            stp.pack(anchor="w")
+            for txt, d in (("−", -1), ("+", 1)):
+                if d == 1:
+                    tk.Label(stp, textvariable=self.var_cortes, width=3, bg="#0E0D16", fg=COR_TEXTO,
+                             font=("Segoe UI", 11, "bold")).pack(side="left")
+                b = tk.Label(stp, text=txt, bg="#0E0D16", fg=COR_DESTAQUE2, font=("Segoe UI", 13, "bold"),
+                             padx=12, pady=3, cursor="hand2")
+                b.pack(side="left")
+                b.bind("<Button-1>", lambda e, d=d: self._mudar_cortes(d))
+            col_d = tk.Frame(f1, bg=COR_CARD)
+            col_d.pack(side="left", fill="x", expand=True, anchor="n")
+            self._rotulo(col_d, "Duração")
+            curtos = {"Automática (20–90s)": "Auto", "Curtos (15–40s)": "Curtos", "Médios (30–60s)": "Médios",
+                      "Longos (45–120s)": "Longos", "Fixa 30s": "30s", "Fixa 60s": "60s"}
+            Segmentos(col_d, self.var_dur, [(k, curtos.get(k, k)) for k in DURACOES]).pack(fill="x")
+            self._rotulo(est, "Layout", topo=16)
+            EscolhaLayout(est, self.var_layout).pack(anchor="w")
+            self._rotulo(est, "Legenda", topo=14)
+            EscolhaLegenda(est, self.var_estilo).pack(anchor="w")
+            chaves = tk.Frame(est, bg=COR_CARD)
+            chaves.pack(fill="x", pady=(10, 0))
+            for i, (t, v) in enumerate((("Barra de progresso", self.var_barra), ("Zoom no pico", self.var_zoom),
+                                        ("Cortar silêncios", self.var_silencio),
+                                        ("Revisar antes de gerar", self.var_revisar))):
+                Chave(chaves, t, v).grid(row=i // 2, column=i % 2, sticky="w", padx=(0, 24), pady=4)
+            self._link(est, "Mais opções em Configurações →",
+                       lambda: self._mostrar("config")).pack(anchor="w", pady=(12, 0))
+
+            # prévia
+            prev = self._card(corpo)
+            prev.grid(row=0, column=1, sticky="nsew", padx=(0, 16))
+            self._rotulo(prev, "Prévia")
+            self.previa = Previa(prev, self)
+            self.previa.pack(pady=(4, 10))
+            tk.Label(prev, text="Muda na hora quando\nvocê troca o estilo", bg=COR_CARD, fg="#8D88A3",
+                     font=("Segoe UI", 8), justify="center").pack()
+
+            # gerar + progresso
+            dirc = tk.Frame(corpo, bg=COR_FUNDO)
+            dirc.grid(row=0, column=2, sticky="nsew")
+            self.cv_btn = tk.Canvas(dirc, height=84, bg=COR_FUNDO, highlightthickness=0)
+            self.cv_btn.pack(fill="x")
+            self.btn = Botao3D(self.cv_btn, "✂  GERAR CORTES", self._iniciar_ou_parar)
+            self.cv_btn.bind("<Configure>", lambda e: self.btn.posicionar(0, 2, e.width, 76))
+            prog = self._card(dirc)
+            prog.pack(fill="both", expand=True, pady=(6, 0))
+            self.lbl_status = tk.Label(prog, text="Pronto para começar.", bg=COR_CARD, fg=COR_TEXTO,
+                                       font=("Segoe UI", 10, "bold"), justify="left", anchor="w", wraplength=300)
+            self.lbl_status.pack(fill="x")
+            prog.bind("<Configure>", lambda e: self.lbl_status.config(wraplength=max(160, e.width - 40)))
+            self.barra = ttk.Progressbar(prog, mode="determinate", maximum=100)
+            self.barra.pack(fill="x", pady=(8, 12))
+            self.etapas = Etapas(prog)
+            self.etapas.pack(fill="x")
+            reg = tk.Frame(prog, bg=COR_CARD)
+            reg.pack(fill="both", expand=True, pady=(12, 0))
+            self.txt = tk.Text(reg, height=5, bg="#0E0D16", fg="#B8B8C8", relief="flat",
                                font=("Consolas", 9), wrap="word", padx=8, pady=6,
                                insertbackground=COR_TEXTO, highlightthickness=0)
-            sb = ttk.Scrollbar(corpo, command=self.txt.yview)
+            sb = ttk.Scrollbar(reg, command=self.txt.yview)
             self.txt.configure(yscrollcommand=sb.set, state="disabled")
             self.txt.pack(side="left", fill="both", expand=True)
             sb.pack(side="left", fill="y")
+            self.lnk_reg = self._link(prog, "Aumentar o registro", self._alternar_registro)
+            self.lnk_reg.pack(anchor="w", pady=(6, 0))
 
-            self._ultimo_tam = None
-            self._job_fundo = None
-            self.cv.bind("<Configure>", self._ao_redimensionar)
-
-        def _ao_redimensionar(self, e=None):
-            W, H = self.cv.winfo_width(), self.cv.winfo_height()
-            if W < 50 or H < 50:
-                return
-            M, CAB, ROD = 24, 92, 26
-            larg_esq = int((W - 3 * M) * 0.58)
-            larg_dir = W - 3 * M - larg_esq
-            x_dir = 2 * M + larg_esq
-            y = CAB
-            for borda, item in self.cards_esq:
-                self.cv.coords(item, M, y)
-                self.cv.itemconfigure(item, width=larg_esq)
-                y += borda.winfo_reqheight() + 12
-            self.lbl_dica.configure(wraplength=max(200, larg_esq - 60))
-            self.lbl_status.configure(wraplength=max(200, larg_dir - 40))
-            self.btn.posicionar(x_dir, CAB - 4, larg_dir, 74)
-            y_dir = CAB + 82
-            for borda, item in self.cards_dir:
-                self.cv.coords(item, x_dir, y_dir)
-                self.cv.itemconfigure(item, width=larg_dir, height=max(200, H - ROD - y_dir - 4))
-            self.cv.coords(self.item_dep, W - M, 34)
-            self.cv.coords(self.item_ver, W - M - self.lbl_dep.winfo_reqwidth() - 8, 34)
-            # não deixa a janela ficar baixa a ponto de cortar as opções
-            precisa = min(y + ROD + 10, self.winfo_screenheight() - 80)
-            if self.winfo_height() < precisa and getattr(self, "_min_alt", 0) != precisa:
-                self._min_alt = precisa
-                self.minsize(self.minsize()[0], precisa)
-            self.cv.coords("rod_v", M, H - 6)
-            self.cv.coords("rod_l", W - M, H - 6)
-            # fundo: redesenha só depois que parar de redimensionar
-            if self._job_fundo:
-                self.after_cancel(self._job_fundo)
-            self._job_fundo = self.after(150, lambda: self._desenhar_fundo(W, H))
-
-        def _desenhar_fundo(self, W, H):
-            self._job_fundo = None
-            if self._ultimo_tam == (W, H):
-                return
+        def _mudar_cortes(self, d):
             try:
-                arq = PASTA_CACHE_UI / f"fundo_{W}x{H}.png"
-                if not arq.exists():
-                    for velho in PASTA_CACHE_UI.glob("fundo_*.png"):
-                        velho.unlink(missing_ok=True)
-                    V.gerar_fundo(W, H, arq)
-                self.img_fundo = tk.PhotoImage(file=str(arq))
-                self.cv.itemconfigure("fundo", image=self.img_fundo)
-                self.cv.tag_lower("fundo")
-                self._ultimo_tam = (W, H)
-            except Exception:
-                pass
+                v = int(self.var_cortes.get())
+            except ValueError:
+                v = 5
+            self.var_cortes.set(str(max(1, min(30, v + d))))
+
+        def _texto_salvar(self):
+            self.lbl_salvar.config(text=f"Salvar em {self.var_saida.get()}  ·  cache {self._cache_txt}")
+
+        def _alternar_registro(self):
+            self._registro_grande = not self._registro_grande
+            self.txt.config(height=18 if self._registro_grande else 5)
+            self.lnk_reg.config(text="Diminuir o registro" if self._registro_grande else "Aumentar o registro")
+
+        # ---------------- página: Fila
+        def _pagina_fila(self, pg):
+            self._cabecalho(pg, "Fila", "Vários vídeos em sequência: o GERAR processa todos, um depois do outro.")
+            c = self._card(pg)
+            c.pack(fill="both", expand=True)
+            self.lbl_fila = tk.Label(c, text="", bg=COR_CARD, fg=COR_TEXTO, font=("Segoe UI", 10, "bold"))
+            self.lbl_fila.pack(anchor="w")
+            self.lst_fila = tk.Listbox(c, height=12, bg="#0E0D16", fg=COR_TEXTO, relief="flat",
+                                       highlightthickness=0, font=("Segoe UI", 10), selectmode="extended",
+                                       selectbackground=COR_DESTAQUE, activestyle="none")
+            self.lst_fila.pack(fill="both", expand=True, pady=10)
+            bt = tk.Frame(c, bg=COR_CARD)
+            bt.pack(fill="x")
+            ttk.Button(bt, text="Remover selecionado", style="Sec.TButton",
+                       command=self._remover_fila).pack(side="left")
+            ttk.Button(bt, text="Limpar fila", style="Sec.TButton",
+                       command=self._limpar_fila).pack(side="left", padx=8)
+            ttk.Button(bt, text="✂ Gerar a fila", style="Acao.TButton",
+                       command=self._gerar_fila).pack(side="right")
+            Chave(c, "Desligar o PC no fim da fila", self.var_desligar).pack(anchor="w", pady=(14, 0))
+            tk.Label(c, text="Para adicionar: em Novo corte, cole o link e clique em “+ Fila”. Com vários vídeos, "
+                             "a revisão fica desligada para tudo rodar sozinho.", bg=COR_CARD, fg="#8D88A3",
+                     font=("Segoe UI", 9), wraplength=720, justify="left").pack(anchor="w", pady=(8, 0))
+            self._atualizar_fila_ui()
+
+        def _gerar_fila(self):
+            if not self.fila_itens:
+                messagebox.showinfo(APP, "A fila está vazia. Adicione vídeos em Novo corte → “+ Fila”.")
+                return
+            self._mostrar("novo")
+            self._iniciar_ou_parar()
+
+        # ---------------- página: Biblioteca
+        def _pagina_biblioteca(self, pg):
+            self._cabecalho(pg, "Biblioteca", "Todos os cortes gerados, prontos para postar.")
+            filtros = tk.Frame(pg, bg=COR_FUNDO)
+            filtros.pack(fill="x", pady=(0, 12))
+            self.var_filtro = tk.StringVar(value="todos")
+            Segmentos(filtros, self.var_filtro, [("todos", "Todos"), ("nao", "Não postados"),
+                                                 ("postados", "Postados")]).pack(side="left")
+            self.var_filtro.trace_add("write", lambda *_: self._carregar_biblioteca())
+            tk.Label(filtros, text="Streamer:", bg=COR_FUNDO, fg=COR_SUAVE).pack(side="left", padx=(18, 6))
+            self.var_filtro_st = tk.StringVar(value="Todos")
+            self.cb_st = ttk.Combobox(filtros, textvariable=self.var_filtro_st, state="readonly",
+                                      width=22, values=["Todos"])
+            self.cb_st.pack(side="left")
+            self.cb_st.bind("<<ComboboxSelected>>", lambda e: self._carregar_biblioteca())
+            self._link(filtros, "Abrir a pasta dos cortes", self._abrir_pasta_saida,
+                       bg=COR_FUNDO).pack(side="right")
+            self.rol_bib = Rolagem(pg)
+            self.rol_bib.pack(fill="both", expand=True)
+            self._colunas_bib = 0
+            self.rol_bib.cv.bind("<Configure>", self._bib_redimensionar, add="+")
+
+        def _bib_redimensionar(self, e):
+            cols = max(1, e.width // 196)
+            if cols != self._colunas_bib and getattr(self, "pagina_atual", "") == "biblioteca":
+                if getattr(self, "_job_bib", None):
+                    self.after_cancel(self._job_bib)
+                self._job_bib = self.after(250, self._carregar_biblioteca)
+
+        def _img_vazia(self):
+            if not hasattr(self, "_vazia"):
+                self._vazia = tk.PhotoImage(width=144, height=256)
+            return self._vazia
+
+        def _carregar_biblioteca(self):
+            hist = carregar_historico()
+            nomes = sorted({h.get("streamer", "") for h in hist if h.get("streamer")})
+            self.cb_st.config(values=["Todos"] + nomes)
+            filtro, st = self.var_filtro.get(), self.var_filtro_st.get()
+            itens = []
+            for h in reversed(hist):
+                arq = h.get("arquivo", "")
+                if not arq or not Path(arq).exists():
+                    continue
+                post = h.get("postado") or {}
+                if (filtro == "nao" and post) or (filtro == "postados" and not post):
+                    continue
+                if st != "Todos" and h.get("streamer") != st:
+                    continue
+                itens.append(h)
+                if len(itens) >= 80:
+                    break
+            d = self.rol_bib.dentro
+            for w in d.winfo_children():
+                w.destroy()
+            self.thumb_lbls = {}
+            if not itens:
+                tk.Label(d, text="Nenhum corte por aqui ainda.\nGere seus primeiros cortes em “Novo corte”.",
+                         bg=COR_FUNDO, fg=COR_SUAVE, font=("Segoe UI", 11), justify="center").pack(pady=60)
+                return
+            larg = self.rol_bib.cv.winfo_width()
+            cols = max(1, (larg if larg > 50 else 900) // 196)
+            self._colunas_bib = cols
+            for i, h in enumerate(itens):
+                self._card_corte(d, h).grid(row=i // cols, column=i % cols, padx=(0, 14), pady=(0, 14), sticky="n")
+            pend = [(h["id"], h["arquivo"]) for h in itens if h.get("id")]
+            threading.Thread(target=self._gerar_miniaturas, args=(pend,), daemon=True).start()
+
+        def _card_corte(self, pai, h):
+            f = tk.Frame(pai, bg=COR_CARD, highlightthickness=1, highlightbackground="#262338")
+            lbl = tk.Label(f, image=self._img_vazia(), bg="#1B1928", bd=0, cursor="hand2")
+            lbl.pack(padx=10, pady=(10, 8))
+            lbl.bind("<Button-1>", lambda e, a=h["arquivo"]: abrir(a))
+            if h.get("id") in self.thumbs:
+                lbl.config(image=self.thumbs[h["id"]])
+            self.thumb_lbls[h.get("id")] = lbl
+            tk.Label(f, text=h.get("titulo", ""), bg=COR_CARD, fg=COR_TEXTO, font=("Segoe UI", 9, "bold"),
+                     wraplength=150, justify="left").pack(anchor="w", padx=10)
+            tk.Label(f, text=f"{h.get('streamer', '')} · {h.get('data', '')}", bg=COR_CARD, fg="#9D98B3",
+                     font=("Segoe UI", 8)).pack(anchor="w", padx=10)
+            post = h.get("postado") or {}
+            nomes = {"youtube": "YouTube", "tiktok": "TikTok", "instagram": "Instagram"}
+            st = ("Postado: " + ", ".join(nomes.get(k, k) for k in post)) if post else "Não postado"
+            tk.Label(f, text=st, bg=COR_CARD, fg="#3DD68C" if post else "#B9B4CC", font=("Segoe UI", 8),
+                     wraplength=150, justify="left").pack(anchor="w", padx=10, pady=(2, 8))
+            bt = tk.Frame(f, bg=COR_CARD)
+            bt.pack(fill="x", padx=10, pady=(0, 10))
+            ttk.Button(bt, text="Postar", style="MiniAcao.TButton",
+                       command=lambda h=h: self._postar_corte(h)).pack(side="left", fill="x", expand=True)
+            ttk.Button(bt, text="▶", width=2, style="Mini.TButton",
+                       command=lambda a=h["arquivo"]: abrir(a)).pack(side="left", padx=(5, 0))
+            ttk.Button(bt, text="Pasta", style="Mini.TButton",
+                       command=lambda a=h["arquivo"]: mostrar_no_explorador(a)).pack(side="left", padx=(5, 0))
+            return f
+
+        def _postar_corte(self, h):
+            janela = JanelaPostar(self, h)
+            janela.bind("<Destroy>", lambda e: self.after(50, self._carregar_biblioteca)
+                        if e.widget is janela and self.pagina_atual == "biblioteca" else None)
+
+        def _gerar_miniaturas(self, pend):
+            import hashlib
+            pasta = PASTA_CACHE_UI / "miniaturas"
+            pasta.mkdir(parents=True, exist_ok=True)
+            ff = achar_bin("ffmpeg")
+            for id_, arq in pend:
+                try:
+                    p = Path(arq)
+                    chave = hashlib.sha1(f"{p}|{p.stat().st_mtime}".encode("utf-8")).hexdigest()[:16]
+                    dest = pasta / f"{chave}.png"
+                    if not dest.exists() and ff:
+                        subprocess.run([ff, "-y", "-loglevel", "error", "-ss", "1.5", "-i", str(p),
+                                        "-frames:v", "1", "-vf", "scale=144:256", str(dest)],
+                                       timeout=30, **SEM_JANELA)
+                    if dest.exists():
+                        self.fila.put(("thumb", (id_, str(dest))))
+                except Exception:
+                    logging.exception("miniatura")
+
+        def _abrir_pasta_saida(self):
+            p = Path(self.var_saida.get().strip() or ".").expanduser()
+            if p.exists():
+                abrir(p)
+            else:
+                messagebox.showinfo(APP, "A pasta dos cortes ainda não existe. Gere um corte primeiro.")
+
+        # ---------------- página: Configurações
+        def _pagina_config(self, pg):
+            self._cabecalho(pg, "Configurações", "Ajustes que você faz uma vez.")
+            rol = Rolagem(pg)
+            rol.pack(fill="both", expand=True)
+            d = rol.dentro
+            d.columnconfigure(0, weight=1, uniform="g")
+            d.columnconfigure(1, weight=1, uniform="g")
+
+            def grupo(lin, col, titulo):
+                g = self._card(d, titulo)
+                g.grid(row=lin, column=col, sticky="nsew", padx=(0, 16) if col == 0 else (0, 6), pady=(0, 16))
+                return g
+
+            def campo(g, rotulo, widget_fn, ajuda=None):
+                tk.Label(g, text=rotulo, bg=COR_CARD, fg=COR_SUAVE, font=("Segoe UI", 9)).pack(anchor="w", pady=(8, 3))
+                w = widget_fn(g)
+                w.pack(fill="x")
+                if ajuda:
+                    tk.Label(g, text=ajuda, bg=COR_CARD, fg="#8D88A3", font=("Segoe UI", 8), wraplength=420,
+                             justify="left").pack(anchor="w", pady=(3, 0))
+                return w
+
+            def pasta_saida(g):
+                f = tk.Frame(g, bg=COR_CARD)
+                ttk.Entry(f, textvariable=self.var_saida).pack(side="left", fill="x", expand=True)
+                ttk.Button(f, text="Escolher", style="Sec.TButton",
+                           command=self._escolher_pasta).pack(side="left", padx=(8, 0))
+                return f
+
+            g = grupo(0, 0, "Geral")
+            campo(g, "Pasta onde salvar os cortes", pasta_saida)
+            self.lbl_cache = tk.Label(g, text="Cache: calculando...", bg=COR_CARD, fg=COR_SUAVE, font=("Segoe UI", 9))
+            self.lbl_cache.pack(anchor="w", pady=(12, 4))
+            ttk.Button(g, text="Limpar cache", style="Sec.TButton", command=self._limpar_cache).pack(anchor="w")
+            Chave(g, "Desligar o PC no fim da fila", self.var_desligar).pack(anchor="w", pady=(14, 0))
+
+            g = grupo(0, 1, "Transcrição")
+            campo(g, "Qualidade (Whisper)", lambda f: ttk.Combobox(f, textvariable=self.var_modelo,
+                                                                   state="readonly", values=list(MODELOS)),
+                  "Rápido para PC fraco. Preciso e Máximo ficam bem melhores com placa NVIDIA.")
+            campo(g, "Idioma da live", lambda f: ttk.Combobox(f, textvariable=self.var_idioma,
+                                                              state="readonly", values=list(IDIOMAS)))
+            Chave(g, "Usar a placa de vídeo NVIDIA", self.var_gpu).pack(anchor="w", pady=(14, 4))
+            self.lbl_gpu = tk.Label(g, text="Verificando a placa de vídeo...", bg=COR_CARD, fg=COR_SUAVE,
+                                    font=("Segoe UI", 9), wraplength=420, justify="left")
+            self.lbl_gpu.pack(anchor="w")
+            self.btn_gpu = ttk.Button(g, text="Como ativar a placa NVIDIA", style="Sec.TButton",
+                                      command=self._ajuda_gpu)
+
+            g = grupo(1, 0, "Análise dos momentos")
+            Chave(g, "Usar o chat da live", self.var_chat).pack(anchor="w", pady=3)
+            Chave(g, "Analisar o movimento da tela", self.var_mov).pack(anchor="w", pady=3)
+            Chave(g, "Revisar os momentos antes de gerar", self.var_revisar).pack(anchor="w", pady=3)
+            campo(g, "Ignorar os primeiros minutos da live",
+                  lambda f: ttk.Spinbox(f, from_=0, to=120, textvariable=self.var_pular, width=6))
+            campo(g, "Achar a câmera do streamer", lambda f: ttk.Combobox(
+                f, textvariable=self.var_cam, state="readonly", values=["Automática", "Marcar manualmente"]))
+
+            g = grupo(1, 1, "Contas e downloads")
+            campo(g, "Login do navegador (YouTube)", lambda f: ttk.Combobox(
+                f, textvariable=self.var_nav, state="readonly",
+                values=["Nenhum", "Firefox", "Chrome", "Edge", "Brave", "Opera"]),
+                "Escolha o navegador em que você está logado no YouTube e feche-o antes de gerar. "
+                "O Firefox costuma funcionar melhor.")
+
+            g = grupo(2, 0, "Marca e créditos")
+            campo(g, "Marca d'água (pequena)", lambda f: ttk.Entry(f, textvariable=self.var_marca))
+            campo(g, "Nome padrão do streamer", lambda f: ttk.Entry(f, textvariable=self.var_streamer),
+                  "Vazio = usa o nome do canal do vídeo.")
+            campo(g, "Hashtags fixas", lambda f: ttk.Entry(f, textvariable=self.var_hashtags),
+                  "Entram em todo corte. Ex.: #meucanaldecortes")
+
+            g = grupo(2, 1, "Sobre")
+            self.lbl_ver_cfg = tk.Label(g, text=f"LukClips v{VERSAO}", bg=COR_CARD, fg=COR_TEXTO,
+                                        font=("Segoe UI", 11, "bold"))
+            self.lbl_ver_cfg.pack(anchor="w")
+            for txt, cmd in (("Procurar atualização", lambda: self._procurar_atualizacao(manual=True)),
+                             ("Abrir pasta de logs", lambda: abrir(PASTA_LOGS)),
+                             ("Copiar informações para suporte", self._copiar_suporte)):
+                ttk.Button(g, text=txt, style="Sec.TButton", command=cmd).pack(anchor="w", pady=(8, 0))
+            tk.Label(g, text="Feito por LukDev", bg=COR_CARD, fg="#8D88A3",
+                     font=("Segoe UI", 8)).pack(anchor="w", pady=(14, 0))
+
+        def _checar_gpu(self):
+            def tarefa():
+                try:
+                    import ctranslate2
+                    n = ctranslate2.get_cuda_device_count()
+                except Exception:
+                    n = 0
+                pronta = cuda_disponivel() if n > 0 else False
+                self.fila.put(("gpu", (n, pronta)))
+            threading.Thread(target=tarefa, daemon=True).start()
+
+        def _ajuda_gpu(self):
+            if getattr(sys, "frozen", False):
+                messagebox.showinfo(APP, "Para usar a placa NVIDIA no LukClips instalado, instale o "
+                                         "“CUDA Toolkit 12” do site da NVIDIA e reinicie o computador.\n\n"
+                                         "Sem isso, o LukClips continua funcionando pelo processador.")
+                return
+            cmd = 'pip install nvidia-cublas-cu12 "nvidia-cudnn-cu12==9.*"'
+            j = tk.Toplevel(self)
+            j.title("Ativar a placa NVIDIA")
+            j.configure(bg=COR_FUNDO)
+            j.resizable(False, False)
+            tk.Label(j, text="Ativar a placa NVIDIA", bg=COR_FUNDO, fg=COR_TEXTO,
+                     font=("Segoe UI", 12, "bold")).pack(anchor="w", padx=18, pady=(16, 4))
+            tk.Label(j, text="Instala as bibliotecas da NVIDIA (uns 700 MB). Depois feche e abra o LukClips.",
+                     bg=COR_FUNDO, fg=COR_SUAVE, font=("Segoe UI", 9)).pack(anchor="w", padx=18)
+            var = tk.StringVar(value=cmd)
+            ent = tk.Entry(j, textvariable=var, state="readonly", readonlybackground="#0E0D16", fg=COR_TEXTO,
+                           relief="flat", font=("Consolas", 10), width=58, highlightthickness=1,
+                           highlightbackground=COR_BORDA)
+            ent.pack(padx=18, pady=12, ipady=6)
+            ent.bind("<FocusIn>", lambda e: ent.select_range(0, "end"))
+            aviso = tk.Label(j, text="", bg=COR_FUNDO, fg="#3DD68C", font=("Segoe UI", 9))
+            aviso.pack(anchor="w", padx=18)
+
+            def copiar():
+                self.clipboard_clear()
+                self.clipboard_append(cmd)
+                self.update()
+                aviso.config(text="Copiado! Cole no PowerShell com Ctrl+V e aperte Enter.")
+
+            def instalar():
+                py = sys.executable.replace("pythonw.exe", "python.exe")
+                linha = f'"{py}" -m pip install nvidia-cublas-cu12 "nvidia-cudnn-cu12==9.*" & echo. & ' \
+                        'echo Pronto! Feche esta janela e abra o LukClips de novo. & pause'
+                subprocess.Popen(["cmd", "/c", linha], creationflags=0x00000010)  # janela nova
+                aviso.config(text="Instalando numa janela nova... quando terminar, reabra o LukClips.")
+
+            bar = tk.Frame(j, bg=COR_FUNDO)
+            bar.pack(fill="x", padx=18, pady=(8, 16))
+            ttk.Button(bar, text="Fechar", style="Sec.TButton", command=j.destroy).pack(side="right")
+            ttk.Button(bar, text="Copiar", style="Sec.TButton", command=copiar).pack(side="right", padx=8)
+            ttk.Button(bar, text="Instalar agora", style="Acao.TButton", command=instalar).pack(side="right")
+            j.transient(self)
+            j.focus_force()
+
+        def _copiar_suporte(self):
+            info = (f"{APP} v{VERSAO}\nSistema: {sys.platform}\nPython: {sys.version.split()[0]}\n"
+                    f"Instalado (.exe): {bool(getattr(sys, 'frozen', False))}\n"
+                    f"ffmpeg: {achar_bin('ffmpeg')}\ndeno: {achar_bin('deno')}\n"
+                    f"Placa: {self.lbl_gpu.cget('text')}\nLogs: {PASTA_LOGS}")
+            self.clipboard_clear()
+            self.clipboard_append(info)
+            self.update()
+            messagebox.showinfo(APP, "Informações copiadas. Cole na conversa com quem vai te ajudar.")
 
         def _postar_selecionado(self):
-            sel = self.lista.curselection()
-            i = sel[0] if sel else 0
-            if i < len(self.cortes_info):
-                JanelaPostar(self, self.cortes_info[i])
+            if self.cortes_info:
+                JanelaPostar(self, self.cortes_info[0])
+
+        def _ao_redimensionar(self, e=None):
+            """(Compatibilidade: a janela nova se ajusta sozinha.)"""
+            return
 
         # ------------------------------------------------------ ações
         def _atualizar_plataforma(self):
@@ -2238,11 +2873,6 @@ def iniciar_interface():
         def _abrir_pasta(self):
             if self.ultima_pasta:
                 abrir(self.ultima_pasta)
-
-        def _abrir_corte(self, _e=None):
-            sel = self.lista.curselection()
-            if sel:
-                abrir(self.arquivos[sel[0]])
 
         def _log(self, msg):
             logging.info(msg)
@@ -2317,6 +2947,8 @@ def iniciar_interface():
                 "layout": self.var_layout.get(), "estilo_legenda": self.var_estilo.get(),
                 "zoom_pico": bool(self.var_zoom.get()), "cortar_silencio": bool(self.var_silencio.get()),
                 "barra_progresso": bool(self.var_barra.get()), "revisar": bool(self.var_revisar.get()),
+                "idioma": self.var_idioma.get() if self.var_idioma.get() in IDIOMAS else "Português",
+                "usar_gpu": bool(self.var_gpu.get()), "hashtags_fixas": self.var_hashtags.get().strip(),
             }
             cfg["ultima_versao"] = VERSAO
             salvar_config(cfg)
@@ -2324,6 +2956,7 @@ def iniciar_interface():
             run["fonte"] = self.var_fonte.get()
             run["modelo"] = MODELOS.get(cfg["modelo"], "small")
             run["dmin"], run["dmax"] = DURACOES[dur]
+            run["idioma"] = IDIOMAS.get(cfg["idioma"], "pt")
             return run
 
         # ---------------- fila
@@ -2340,6 +2973,7 @@ def iniciar_interface():
                                     "streamer": self.var_streamer.get().strip()})
             self.var_fonte.set("")
             self._atualizar_fila_ui()
+            self._log(f"➕ Adicionado à fila ({len(self.fila_itens)}): {fonte}")
 
         def _remover_fila(self):
             for i in reversed(self.lst_fila.curselection()):
@@ -2354,14 +2988,15 @@ def iniciar_interface():
             self.lst_fila.delete(0, "end")
             for it in self.fila_itens:
                 quem = f" — {it['streamer']}" if it["streamer"] else ""
-                curto = it["fonte"] if len(it["fonte"]) < 70 else "…" + it["fonte"][-68:]
+                curto = it["fonte"] if len(it["fonte"]) < 90 else "…" + it["fonte"][-88:]
                 self.lst_fila.insert("end", f"[{it['plataforma']}] {curto}{quem}")
-            if self.fila_itens:
-                self.lbl_fila.config(text=f"Fila: {len(self.fila_itens)} vídeo(s) — o GERAR processa todos")
-                self.fr_fila.pack(fill="x")
+            n = len(self.fila_itens)
+            self.lbl_fila.config(text=f"{n} vídeo(s) na fila" if n else "A fila está vazia")
+            if n:
+                self.badge_fila.config(text=str(n))
+                self.badge_fila.pack(side="right", padx=(0, 12))
             else:
-                self.fr_fila.pack_forget()
-            self.after(30, self._ao_redimensionar)
+                self.badge_fila.pack_forget()
 
         # ---------------- cache
         def _pasta_cache(self):
@@ -2437,9 +3072,10 @@ def iniciar_interface():
             self.cancel.clear()
             self.btn.config(text="■  PARAR", style="Parar.TButton")
             self.barra["value"] = 0
-            self.lista.delete(0, "end")
             self.arquivos, self.cortes_info = [], []
-            self.btn_postar.config(state="disabled")
+            self.etapas.resetar()
+            self.etapas.ativo = True
+            self._mostrar("novo")
             self._log(f"——— {datetime.now():%H:%M:%S} — começando ({len(itens)} vídeo(s)) ———")
             desligar = bool(self.var_desligar.get())
             threading.Thread(target=self._trabalho, args=(cfg, itens, desligar), daemon=True).start()
@@ -2506,6 +3142,26 @@ def iniciar_interface():
                         p, s = dado
                         self.barra["value"] = p
                         self.lbl_status.config(text=s)
+                        if self.rodando:
+                            self.etapas.atualizar(p, s)
+                    elif tipo == "thumb":
+                        id_, caminho = dado
+                        lbl = self.thumb_lbls.get(id_)
+                        if lbl is not None and lbl.winfo_exists():
+                            img = tk.PhotoImage(file=caminho)
+                            self.thumbs[id_] = img
+                            lbl.config(image=img)
+                    elif tipo == "gpu":
+                        n, pronta = dado
+                        if pronta:
+                            self.lbl_gpu.config(text="✓ Placa NVIDIA pronta: transcrição rápida.", fg="#3DD68C")
+                        elif n:
+                            self.lbl_gpu.config(text="⚠ Placa NVIDIA encontrada, mas faltam as bibliotecas CUDA. "
+                                                     "Por enquanto usa o processador.", fg="#FFB020")
+                            self.btn_gpu.pack(anchor="w", pady=(8, 0))
+                        else:
+                            self.lbl_gpu.config(text="Nenhuma placa NVIDIA encontrada: usa o processador.",
+                                                fg=COR_SUAVE)
                     elif tipo == "camera":
                         (png, fw, fh), fim = dado
                         SeletorCamera(self, png, fw, fh, fim)
@@ -2513,19 +3169,22 @@ def iniciar_interface():
                         P, fim = dado
                         JanelaRevisao(self, P, fim)
                     elif tipo == "cache":
-                        self.lbl_cache.config(text=f"💾 Cache: {formatar_tamanho(dado)} "
-                                                   "(vídeos baixados e transcrições)")
+                        self._cache_txt = formatar_tamanho(dado)
+                        self.lbl_cache.config(text=f"Cache: {self._cache_txt} (vídeos baixados e transcrições)")
+                        self._texto_salvar()
                     elif tipo == "atualizacao":
                         self._oferecer_atualizacao(dado)
                     elif tipo == "fim":
                         self._ao_terminar(*dado)
                     elif tipo == "cancelado":
+                        self.etapas.parar()
                         self.lbl_status.config(text="Cancelado.")
                         self._log("⏹ Cancelado.")
                         self._terminar()
                     elif tipo == "erro":
                         msg, detalhes = dado
-                        self.lbl_status.config(text="Deu erro 😕")
+                        self.etapas.parar(erro=True)
+                        self.lbl_status.config(text="Deu erro")
                         self._log("❌ " + msg)
                         self._terminar()
                         JanelaErro(self, msg, detalhes)
@@ -2540,17 +3199,13 @@ def iniciar_interface():
                 for r in rel:
                     self.cortes_info.append({"arquivo": str(Path(pasta) / r["arquivo"]), "id": r["id"],
                                              "titulo": r["titulo"]})
-                    self.lista.insert("end", f"{r['arquivo']}  {r['titulo'][:30]}")
             total = len(self.cortes_info)
-            if total:
-                self.lista.selection_set(0)
-                self.btn_pasta.config(state="normal")
-                self.btn_postar.config(state="normal")
             self._terminar()
+            self.etapas.concluir()
             self._calcular_cache()
-            if len(resultados) > 1 or falhas:
-                self.lbl_status.config(text=f"Fila concluída: {total} cortes de {len(resultados)} vídeo(s)"
-                                            + (f", {len(falhas)} com erro" if falhas else ""))
+            self.lbl_status.config(text=f"Pronto! {total} corte(s) gerado(s)" +
+                                   (f" de {len(resultados)} vídeos" if len(resultados) > 1 else "") +
+                                   (f", {len(falhas)} com erro" if falhas else ""))
             if desligar and os.name == "nt":
                 self._log("🌙 Desligando o PC em 2 minutos (para cancelar: shutdown /a no Executar).")
                 subprocess.Popen(["shutdown", "/s", "/t", "120", "/c", "LukClips terminou a fila de cortes."],
@@ -2560,9 +3215,11 @@ def iniciar_interface():
             if falhas:
                 lista = "\n".join(f"• {f[:60]}: {m.splitlines()[0]}" for f, m in falhas[:6])
                 messagebox.showwarning(APP, f"Alguns vídeos deram erro:\n\n{lista}\n\nDetalhes no registro.")
-            if total and messagebox.askyesno(APP, f"{total} cortes prontos! 🎉\n\n"
-                                                  "Quer revisar e postar o primeiro agora?"):
-                self._postar_selecionado()
+            if total:
+                self.var_filtro.set("todos")
+                self._mostrar("biblioteca")
+                if messagebox.askyesno(APP, f"{total} cortes prontos! 🎉\n\nQuer revisar e postar o primeiro agora?"):
+                    self._postar_selecionado()
 
         def _terminar(self):
             self.rodando = False
@@ -2593,7 +3250,8 @@ def iniciar_interface():
                 self.lbl_ver.config(text=f"✓ v{VERSAO} · atualizado", fg="#3DD68C")
             else:
                 self.lbl_ver.config(text=f"v{VERSAO}", fg=COR_SUAVE)
-            self.after(30, self._ao_redimensionar)
+            self.lbl_ver_cfg.config(text=f"LukClips v{VERSAO} — " + self.lbl_ver.cget("text").split("·")[-1].strip()
+                                    if "·" in self.lbl_ver.cget("text") else f"LukClips v{VERSAO}")
             if info.get("erro"):
                 if info.get("manual"):
                     messagebox.showinfo(APP, f"Não consegui procurar atualização agora.\n\n{info['erro']}")

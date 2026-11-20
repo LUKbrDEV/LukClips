@@ -33,6 +33,16 @@ if errorlevel 1 (
 gh auth status >nul 2>nul
 if errorlevel 1 gh auth login
 
+gh release view v%VERSAO% -R %REPO% >nul 2>nul
+if not errorlevel 1 (
+  echo.
+  echo  A versao v%VERSAO% ja foi publicada antes.
+  echo  Aumente o numero em VERSAO no lukclips.py ^(ex.: de 3.0.4 para 3.0.5^),
+  echo  rode o GERAR_EXE.bat de novo e depois este arquivo.
+  pause
+  exit /b 1
+)
+
 set /p NOTAS=O que mudou nesta versao? (uma linha): 
 gh release create v%VERSAO% "%SRC%\LukClips_Setup_%VERSAO%.exe" -R %REPO% --title "LukClips v%VERSAO%" --notes "%NOTAS%"
 if errorlevel 1 (

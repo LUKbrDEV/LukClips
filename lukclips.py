@@ -31,7 +31,7 @@ import momentos as M  # noqa: E402
 import visual as V  # noqa: E402
 
 APP = "LukClips"
-VERSAO = "3.0.1"
+VERSAO = "3.0.2"
 os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
 
 # No .exe sem console, stdout/stderr não existem e barras de progresso de
@@ -73,6 +73,53 @@ def _json_seguro(o):
     if hasattr(o, "tolist"):
         return o.tolist()
     return str(o)
+
+
+def _registrar_cuda():
+    """Se as bibliotecas da NVIDIA (pip nvidia-cublas-cu12 / nvidia-cudnn-cu12) estiverem
+    instaladas, ou ao lado do .exe, avisa o Windows onde estão as DLLs."""
+    if os.name != "nt":
+        return
+    pastas = [PASTA_APP, PASTA_APP / "cuda"]
+    try:
+        import site
+        for base in site.getsitepackages() + [site.getusersitepackages()]:
+            nv = Path(base) / "nvidia"
+            if nv.is_dir():
+                pastas += [p for p in nv.glob("*/bin") if p.is_dir()]
+    except Exception:
+        pass
+    for p in pastas:
+        try:
+            if p.is_dir():
+                os.add_dll_directory(str(p))
+                os.environ["PATH"] = str(p) + os.pathsep + os.environ.get("PATH", "")
+        except Exception:
+            pass
+
+
+_registrar_cuda()
+
+
+def cuda_disponivel():
+    """Placa NVIDIA presente E a biblioteca cuBLAS carrega? (senão nem tenta a GPU)."""
+    try:
+        import ctranslate2
+        if ctranslate2.get_cuda_device_count() <= 0:
+            return False
+    except Exception:
+        return False
+    if os.name != "nt":
+        return True
+    import ctypes
+    for nome in ("cublas64_12.dll", "cublas64_11.dll"):
+        try:
+            ctypes.WinDLL(nome)
+            return True
+        except OSError:
+            continue
+    logging.info("NVIDIA encontrada, mas sem cublas64_12.dll: usando o processador")
+    return False
 
 
 def achar_bin(nome):
@@ -444,15 +491,41 @@ class Fabrica:
             return dados
         self.prog(28, "Carregando o Whisper (na 1ª vez ele baixa o modelo)...")
         from faster_whisper import WhisperModel
-        try:
-            m = WhisperModel(self.cfg["modelo"], device="cuda", compute_type="float16")
-            self.log("🚀 Usando placa de vídeo NVIDIA")
-        except Exception:
-            self.log("🖥 Sem placa NVIDIA compatível, usando o processador (mais lento)")
-            m = WhisperModel(self.cfg["modelo"], device="cpu", compute_type="int8")
         with wave.open(str(wav)) as wf:
             audio = np.frombuffer(wf.readframes(wf.getnframes()), dtype=np.int16)
         audio = audio.astype(np.float32) / 32768.0
+
+        usar_gpu = self.cfg.get("usar_gpu", True) and cuda_disponivel()
+        m = None
+        if usar_gpu:
+            try:
+                m = WhisperModel(self.cfg["modelo"], device="cuda", compute_type="float16")
+                self.log("🚀 Usando placa de vídeo NVIDIA")
+            except Exception as e:
+                logging.warning("GPU indisponível: %s", e)
+                m = None
+        if m is None:
+            self.log("🖥 Usando o processador para transcrever (mais lento que placa NVIDIA)")
+            m = WhisperModel(self.cfg["modelo"], device="cpu", compute_type="int8")
+            usar_gpu = False
+        try:
+            dados = self._rodar_whisper(m, audio, dur_total)
+        except Cancelado:
+            raise
+        except Exception as e:
+            erro = str(e).lower()
+            if not usar_gpu or not any(k in erro for k in ("cublas", "cudnn", "cuda", ".dll", "cufft")):
+                raise
+            logging.warning("GPU falhou durante a transcrição: %s", e)
+            self.log("⚠ A placa NVIDIA não tem as bibliotecas CUDA instaladas. "
+                     "Recomeçando a transcrição pelo processador...")
+            del m
+            m = WhisperModel(self.cfg["modelo"], device="cpu", compute_type="int8")
+            dados = self._rodar_whisper(m, audio, dur_total)
+        arq.write_text(json.dumps(dados, ensure_ascii=False, default=_json_seguro), encoding="utf-8")
+        return dados
+
+    def _rodar_whisper(self, m, audio, dur_total):
         segs, _ = m.transcribe(audio, language=self.cfg.get("idioma", "pt"),
                                word_timestamps=True, vad_filter=True)
         dados = []
@@ -469,7 +542,6 @@ class Fabrica:
             falta = f" — faltam ~{resta / 60:.0f} min" if resta else ""
             self.prog(28 + 40 * pct, f"Transcrevendo... {pct * 100:.0f}%{falta}")
             self.log(f"  [{ts(s.start)[:-3]}] {s.text.strip()}")
-        arq.write_text(json.dumps(dados, ensure_ascii=False, default=_json_seguro), encoding="utf-8")
         return dados
 
     # -------------------------------------------------------- melhores partes
@@ -1751,9 +1823,11 @@ def iniciar_interface():
             s.theme_use("clam")
             s.configure(".", background=COR_FUNDO, foreground=COR_TEXTO, font=("Segoe UI", 10))
             s.configure("Card.TFrame", background=COR_CARD)
-            s.configure("TNotebook", background=COR_CARD, borderwidth=0, tabmargins=(0, 0, 0, 0))
+            s.configure("TNotebook", background=COR_CARD, borderwidth=1, tabmargins=(0, 0, 0, 0),
+                        bordercolor=COR_BORDA, lightcolor=COR_CARD, darkcolor=COR_CARD)
             s.configure("TNotebook.Tab", background=COR_CAMPO, foreground=COR_SUAVE, padding=(14, 6),
-                        borderwidth=0, font=("Segoe UI", 9, "bold"))
+                        borderwidth=0, font=("Segoe UI", 9, "bold"), bordercolor=COR_BORDA,
+                        lightcolor=COR_CAMPO, darkcolor=COR_CAMPO)
             s.map("TNotebook.Tab", background=[("selected", COR_DESTAQUE), ("active", COR_BORDA)],
                   foreground=[("selected", "white")])
             s.configure("TLabel", background=COR_CARD, foreground=COR_TEXTO)
@@ -1964,8 +2038,8 @@ def iniciar_interface():
                                          values=["Nenhum", "Firefox", "Chrome", "Edge", "Brave", "Opera"]))
             caixas(g, 0, 1, "Sinais", [("Usar o chat da live", self.var_chat),
                                        ("Analisar o movimento da tela", self.var_mov)])
-            caixas(g, 0, 2, "Fluxo", [("Revisar os momentos antes de gerar", self.var_revisar),
-                                      ("Desligar o PC quando a fila acabar", self.var_desligar)])
+            caixas(g, 0, 2, "Fluxo", [("Revisar antes de gerar", self.var_revisar),
+                                      ("Desligar o PC no fim da fila", self.var_desligar)])
 
             self.lbl_dica = ttk.Label(c, text="Nome do streamer vazio = usa o nome do canal. YouTube pedindo "
                                               "login? Escolha o navegador na aba ⚙ Análise.",

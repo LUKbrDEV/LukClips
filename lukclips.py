@@ -1587,6 +1587,8 @@ def iniciar_interface():
             self.configure(bg=COR_FUNDO)
             self.P, self.ao_fim = P, ao_fim
             self.cands = P["cands"]
+            import copy
+            self.originais = copy.deepcopy(self.cands)
             self.tr = P["transcript"]
             self.atual = None
             self.linhas_idx = []
@@ -1629,7 +1631,10 @@ def iniciar_interface():
             tempos.pack(fill="x")
             self.lbl_ini = tk.Label(tempos, text="", bg=COR_CARD, fg=COR_TEXTO, font=("Segoe UI", 10, "bold"))
             self.lbl_fim = tk.Label(tempos, text="", bg=COR_CARD, fg=COR_TEXTO, font=("Segoe UI", 10, "bold"))
-            for rot, lbl, campo in (("Início", self.lbl_ini, "ini"), ("Fim", self.lbl_fim, "fim")):
+            self.lbl_ini.destroy()
+            self.lbl_fim.destroy()
+            rotulos = {}
+            for rot, campo in (("Início", "ini"), ("Fim", "fim")):
                 f = tk.Frame(tempos, bg=COR_CARD)
                 f.pack(side="left", padx=(0, 22))
                 tk.Label(f, text=rot, bg=COR_CARD, fg=COR_SUAVE, font=("Segoe UI", 9)).pack(anchor="w")
@@ -1638,10 +1643,13 @@ def iniciar_interface():
                 for txt, dlt in (("−5", -5), ("−1", -1)):
                     ttk.Button(lin, text=txt, width=3, style="Sec.TButton",
                                command=lambda c=campo, x=dlt: self._mover(c, x)).pack(side="left")
-                lbl.pack(in_=lin, side="left", padx=8)
+                rotulos[campo] = tk.Label(lin, text="", bg=COR_CARD, fg=COR_TEXTO, width=9,
+                                          font=("Segoe UI", 10, "bold"))
+                rotulos[campo].pack(side="left", padx=6)
                 for txt, dlt in (("+1", 1), ("+5", 5)):
                     ttk.Button(lin, text=txt, width=3, style="Sec.TButton",
                                command=lambda c=campo, x=dlt: self._mover(c, x)).pack(side="left")
+            self.lbl_ini, self.lbl_fim = rotulos["ini"], rotulos["fim"]
             self.lbl_dur = tk.Label(tempos, text="", bg=COR_CARD, fg=COR_SUAVE, font=("Segoe UI", 9))
             self.lbl_dur.pack(side="left", anchor="s")
             ttk.Button(d, text="▶ Ver prévia do trecho", style="Acao.TButton",
@@ -1659,10 +1667,17 @@ def iniciar_interface():
             base.pack(fill="x", padx=16, pady=12)
             self.lbl_qtd = tk.Label(base, text="", bg=COR_FUNDO, fg=COR_TEXTO, font=("Segoe UI", 10))
             self.lbl_qtd.pack(side="left")
+            self.var_nao_mostrar = tk.BooleanVar(value=False)
+            tk.Checkbutton(base, text="Não mostrar esta tela de novo", variable=self.var_nao_mostrar,
+                           bg=COR_FUNDO, fg=COR_SUAVE, selectcolor=COR_CAMPO, activebackground=COR_FUNDO,
+                           activeforeground=COR_TEXTO, font=("Segoe UI", 9), highlightthickness=0,
+                           bd=0).pack(side="left", padx=(18, 0))
             ttk.Button(base, text="✂ Gerar os cortes marcados", style="Acao.TButton",
                        command=self._confirmar).pack(side="right")
+            ttk.Button(base, text="⏭ Pular revisão", style="Sec.TButton",
+                       command=self._pular).pack(side="right", padx=8)
             ttk.Button(base, text="Cancelar", style="Sec.TButton",
-                       command=self._cancelar).pack(side="right", padx=8)
+                       command=self._cancelar).pack(side="right")
             self._preencher()
             if self.cands:
                 self.tv.selection_set("0")
@@ -1671,14 +1686,16 @@ def iniciar_interface():
 
         # -- lista
         def _preencher(self):
-            sel = self.tv.selection()
-            self.tv.delete(*self.tv.get_children())
+            """Atualiza as linhas no lugar. Não mexe na seleção: re-selecionar disparava
+            o evento de seleção de novo e travava a janela num laço sem fim."""
+            existentes = set(self.tv.get_children())
             for i, c in enumerate(self.cands):
-                self.tv.insert("", "end", iid=str(i), values=(
-                    "✅" if c["escolhido"] else "⬜", f"{c['nota']:.1f}", ts(c["ini"])[:-3].lstrip("0:"),
-                    f"{c['fim'] - c['ini']:.0f}s", c["titulo"]))
-            if sel:
-                self.tv.selection_set(sel)
+                valores = ("✅" if c["escolhido"] else "⬜", f"{c['nota']:.1f}",
+                           ts(c["ini"])[:-3].lstrip("0:") or "0", f"{c['fim'] - c['ini']:.0f}s", c["titulo"])
+                if str(i) in existentes:
+                    self.tv.item(str(i), values=valores)
+                else:
+                    self.tv.insert("", "end", iid=str(i), values=valores)
             n = sum(c["escolhido"] for c in self.cands)
             self.lbl_qtd.config(text=f"{n} corte(s) marcado(s)")
 
@@ -1692,10 +1709,10 @@ def iniciar_interface():
                     return "break"
 
         def _selecionar(self):
-            self._guardar()
             sel = self.tv.selection()
-            if not sel:
+            if not sel or int(sel[0]) == self.atual:
                 return
+            self._guardar()
             self.atual = int(sel[0])
             c = self.cands[self.atual]
             self.var_tit.set(c["titulo"])
@@ -1704,8 +1721,8 @@ def iniciar_interface():
 
         def _mostrar_tempos(self):
             c = self.cands[self.atual]
-            self.lbl_ini.config(text=ts(c["ini"])[:-1])
-            self.lbl_fim.config(text=ts(c["fim"])[:-1])
+            self.lbl_ini.config(text=ts(c["ini"])[:-3])
+            self.lbl_fim.config(text=ts(c["fim"])[:-3])
             self.lbl_dur.config(text=f"duração {c['fim'] - c['ini']:.0f}s")
 
         def _mostrar_legenda(self):
@@ -1776,7 +1793,30 @@ def iniciar_interface():
                                                                  fg="#FFB020"))
             threading.Thread(target=tarefa, daemon=True).start()
 
+        def _lembrar_escolha(self):
+            """Se marcou 'não mostrar de novo', desliga a revisão nas opções (aba ⚙ Análise)."""
+            if self.var_nao_mostrar.get():
+                try:
+                    self.master.var_revisar.set(False)
+                    self.master._coletar_cfg()
+                    self.master._log("ℹ Revisão desligada. Para ligar de novo: aba ⚙ Análise → "
+                                     "'Revisar antes de gerar'.")
+                except Exception:
+                    logging.exception("salvar opção de revisão")
+
+        def _pular(self):
+            """Gera direto os momentos que o LukClips escolheu, sem as mudanças feitas aqui."""
+            escolhidos = [c for c in self.originais if c["escolhido"]]
+            if not escolhidos:
+                escolhidos = self.originais[:max(1, int(self.P.get("qtd", 5)))]
+            self._lembrar_escolha()
+            self.respondido = True
+            self.grab_release()
+            self.destroy()
+            self.ao_fim(escolhidos)
+
         def _confirmar(self):
+            self._lembrar_escolha()
             self._guardar()
             escolhidos = [c for c in self.cands if c["escolhido"]]
             if not escolhidos:

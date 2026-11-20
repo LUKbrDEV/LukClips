@@ -38,7 +38,7 @@ UNIVERSAL = {
     "absurdo": 3, "bizarro": 3, "insano": 3, "surreal": 3, "cara": 1, "velho": 1,
     "para tudo": 3, "não não não": 4, "nao nao nao": 4, "não pode": 3, "sério": 1,
     # risada
-    "kkk": 3, "haha": 3, "hahaha": 4, "rindo": 2, "que engraçado": 3, "morri de rir": 4,
+    "kkk*": 3, "haha*": 3, "hahaha*": 4, "rindo": 2, "que engraçado": 3, "morri de rir": 4,
     # vitória / derrota
     "ganhei": 3, "perdi": 3, "conseguimos": 3, "consegui": 2, "acabou": 2,
     "morri": 3, "morreu": 3, "de novo não": 3, "não acredito nisso": 4,
@@ -49,10 +49,17 @@ UNIVERSAL = {
 # cada pacote: palavras que identificam o jogo, gatilhos extras, títulos
 PACOTES = {
     "gta": {
-        "detecta": ["gta", "grand theft", "los santos", "vice city", "lucia", "jason"],
-        "gatilhos": {"polícia": 2, "policia": 2, "estrela": 2, "explodiu": 3, "capotou": 3,
-                     "bati": 2, "fugir": 2, "corre": 2, "tiro": 2, "assalto": 3, "roubar": 2,
-                     "helicóptero": 2, "tanque": 3, "atropel": 2, "procurado": 2},
+        "detecta": ["gta", "grand theft", "los santos", "vice city", "leonida", "lucia", "jason",
+                    "gta 6", "gta vi", "gta rp"],
+        "gatilhos": {"polícia": 2, "policia": 2, "estrela": 2, "estrelas": 2, "explodiu": 3,
+                     "capotou": 3, "bati": 2, "fugir": 2, "fugi": 3, "corre": 2, "tiro": 2,
+                     "assalto": 3, "roubar": 2, "roubei": 3, "helicóptero": 2, "helicoptero": 2,
+                     "tanque": 3, "atropel*": 2, "procurado": 2, "me prenderam": 4, "preso": 3,
+                     "algemado": 3, "perdi a polícia": 4, "despistei": 4, "swat": 3, "exército": 3,
+                     "exercito": 3, "jacaré": 3, "jacare": 3, "afundou": 3, "caiu no mar": 3,
+                     "voou": 3, "rampa": 2, "acidente": 2, "pegou fogo": 3, "explosão": 3,
+                     "explosao": 3, "banco": 2, "loja": 1, "cofre": 3, "dinheiro": 1, "lucia": 1,
+                     "jason": 1, "bug": 3, "bugou": 3, "glitch": 3, "ragdoll": 3},
     },
     "terror": {
         "detecta": ["terror", "horror", "resident evil", "outlast", "fnaf", "five nights",
@@ -81,6 +88,115 @@ PACOTES = {
         "gatilhos": {"bati": 3, "capotou": 3, "ultrapassei": 3, "primeiro lugar": 3,
                      "rodou": 2, "voando": 2},
     },
+    "roblox": {
+        "detecta": ["roblox", "obby", "brookhaven", "blox fruits", "doors", "adopt me"],
+        "gatilhos": {"caí": 2, "cai": 1, "pulei": 2, "quase": 2, "checkpoint": 3, "trollou": 3,
+                     "trollado": 3, "hacker": 3, "bugou": 3, "susto": 4},
+    },
+    "moba": {
+        "detecta": ["league of legends", "lol", "dota", "wild rift", "mobile legends"],
+        "gatilhos": {"pentakill": 5, "penta": 5, "quadra": 4, "triple": 3, "baron": 3,
+                     "dragão": 2, "dragao": 2, "roubei": 3, "flash": 2, "tower dive": 3,
+                     "nexus": 3, "feedando": 2, "ganhamos": 3, "perdemos": 3},
+    },
+    "luta": {
+        "detecta": ["street fighter", "mortal kombat", "tekken", "smash bros", "fatality"],
+        "gatilhos": {"combo": 3, "fatality": 5, "perfect": 4, "nocaute": 4, "k.o": 3,
+                     "virei": 3, "round": 1, "defendi": 2},
+    },
+    "cassino": {
+        "detecta": ["cassino", "casino", "slot", "slots", "tigrinho", "fortune tiger", "fortune ox",
+                    "fortune rabbit", "aviator", "aviãozinho", "roleta", "blackjack", "gates of olympus",
+                    "sweet bonanza", "sugar rush", "big bass", "mines", "plinko", "bacbo", "bac bo",
+                    "stake", "blaze"],
+        "gatilhos": {"bônus": 3, "bonus": 3, "bônus comprado": 4, "free spin*": 3, "rodada grátis": 3,
+                     "rodadas grátis": 3, "multiplicador": 3, "x100": 4, "x500": 5, "x1000": 5,
+                     "mil x": 5, "max win": 5, "maxwin": 5, "paga": 2, "pagou": 4, "pagando": 3,
+                     "não pagou": 3, "nao pagou": 3, "forrei": 4, "forrou": 4, "green": 3, "red": 2,
+                     "quebrei": 4, "quebrou a banca": 5, "zerei": 3, "zerou": 3, "perdi tudo": 4,
+                     "all in": 4, "all-in": 4, "saquei": 3, "sacar": 2, "lucro": 3, "prejuízo": 3,
+                     "prejuizo": 3, "carta": 2, "carta solta": 4, "tigre": 2, "soltou": 3,
+                     "jackpot": 5, "mega win": 4, "big win": 4, "super win": 4, "insano": 3,
+                     "aposta": 2, "apostei": 2, "dobrou": 3, "triplicou": 4, "vermelho": 1, "preto": 1},
+    },
+    "react": {
+        "detecta": ["react", "reagindo", "reage", "reação", "reacao", "assistindo", "vendo vídeo",
+                    "tiktoks", "memes", "vídeos engraçados", "videos engracados", "tente não rir",
+                    "tente nao rir", "just chatting"],
+        "gatilhos": {"pausa": 2, "pausa aí": 3, "volta": 2, "volta aí": 3, "volta volta": 4,
+                     "de novo": 2, "mentira": 3, "fake": 2, "isso é real": 3, "não é possível": 3,
+                     "nao e possivel": 3, "chat": 1, "olha a cara": 3, "não ri": 3,
+                     "perdi": 2, "aguentei": 2, "chorando": 3, "que vergonha": 3, "cringe": 3,
+                     "que ódio": 3, "que odio": 3, "tô passando mal": 4, "to passando mal": 4},
+    },
+    "irl": {
+        "detecta": ["irl", "in real life", "na rua", "vlog", "viagem", "rolê",
+                    "desafio", "desafios", "24 horas", "24h", "pegadinha", "trollagem", "encontro"],
+        "gatilhos": {"segurança": 2, "seguranca": 2, "expulsaram": 4, "expulso": 3, "polícia": 2,
+                     "policia": 2, "fã": 2, "fãs": 2, "me reconheceu": 4, "foto": 1, "caiu": 3,
+                     "tombo": 4, "vergonha": 3, "envergonhado": 3, "corre": 2, "fugiu": 3,
+                     "cachorro": 2, "pegadinha": 3, "desafio": 2, "perdeu": 2, "apostou": 2,
+                     "comeu": 1, "pimenta": 3, "vomit*": 3, "gelado": 2, "chorou": 3},
+    },
+    "sobrevivencia": {
+        "detecta": ["rust", "dayz", "ark", "the forest", "sons of the forest", "valheim", "raft",
+                    "palworld", "subnautica", "7 days to die", "project zomboid", "zumbi", "zombie"],
+        "gatilhos": {"raid": 4, "raidaram": 4, "base": 2, "roubaram": 4, "zumbi": 2, "zumbis": 2,
+                     "horda": 3, "fome": 1, "sede": 1, "matou": 3, "perdi tudo": 4, "loot": 2,
+                     "nu": 2, "pelado": 3, "traíra": 4, "traira": 4, "traiu": 4, "aliado": 2,
+                     "bomba": 3, "c4": 4, "me pegou": 3, "urso": 3, "tubarão": 3, "tubarao": 3},
+    },
+    "rage": {
+        "detecta": ["only up", "getting over it", "jump king", "pogostuck", "chained together",
+                    "peak", "a difficult game about climbing", "foddy", "rage game"],
+        "gatilhos": {"caí": 4, "cai": 3, "caiu": 3, "caímos": 4, "caimos": 4, "voltei tudo": 5,
+                     "do começo": 4, "do comeco": 4, "não acredito": 4, "de novo": 3, "ódio": 3,
+                     "odio": 3, "raiva": 3, "vou desistir": 4, "desisto": 4, "consegui": 3,
+                     "finalmente": 4, "segura": 2, "pula": 2, "pulei": 2, "escorreguei": 4,
+                     "puxou": 3, "me puxou": 4, "culpa sua": 4, "culpa tua": 4},
+    },
+    "party": {
+        "detecta": ["fall guys", "stumble guys", "among us", "gartic", "pummel party", "mario party",
+                    "lethal company", "content warning", "r.e.p.o", "goose goose duck",
+                    "golf it", "jackbox", "pico park"],
+        "gatilhos": {"impostor": 4, "impostora": 4, "fui eu": 3, "não fui eu": 4, "nao fui eu": 4,
+                     "mentiroso": 4, "mentira": 3, "votem": 3, "vota": 2, "ejetado": 4, "sus": 3,
+                     "traíra": 4, "traira": 4, "me empurrou": 4, "empurrou": 3, "eliminado": 3,
+                     "eliminaram": 3, "perdi": 2, "ganhei": 3, "coroa": 3, "monstro": 3,
+                     "morreu": 3, "deixa eu": 1, "culpa": 2},
+    },
+    "souls": {
+        "detecta": ["elden ring", "dark souls", "sekiro", "bloodborne", "hollow knight", "silksong",
+                    "lies of p", "black myth", "wukong", "nightreign"],
+        "gatilhos": {"boss": 2, "chefe": 2, "matei o boss": 5, "matei o chefe": 5, "derrotei": 4,
+                     "parry": 3, "aparei": 3, "esquivei": 3, "tentativa": 2, "tentativas": 2,
+                     "morri": 3, "you died": 4, "fase 2": 3, "segunda fase": 3, "finalmente": 4,
+                     "estus": 2, "um hit": 3, "sem vida": 3},
+    },
+    "mobile": {
+        "detecta": ["free fire", "clash royale", "clash of clans", "brawl stars", "pokémon go",
+                    "pokemon go", "subway surfers", "standoff", "pubg mobile", "cod mobile"],
+        "gatilhos": {"booyah": 4, "capa": 3, "capei": 4, "rush": 2, "gel": 1, "ganhei": 3,
+                     "perdi": 3, "torre": 2, "três coroas": 4, "tres coroas": 4, "lendária": 3,
+                     "lendaria": 3, "baú": 2, "bau": 2, "troféu": 2, "trofeu": 2, "mestre": 2},
+    },
+    "pokemon": {
+        "detecta": ["pokémon", "pokemon", "pikachu", "shiny", "nuzlocke", "palworld"],
+        "gatilhos": {"shiny": 5, "capturei": 4, "peguei": 3, "fugiu": 3, "lendário": 4,
+                     "lendario": 4, "evoluiu": 3, "crítico": 2, "critico": 2, "nuzlocke": 2,
+                     "morreu": 3, "desmaiou": 3},
+    },
+    "futebol_real": {
+        "detecta": ["assistindo o jogo", "assistindo jogo", "copa do mundo", "brasileirão",
+                    "brasileirao", "libertadores", "champions", "seleção", "selecao", "flamengo",
+                    "corinthians", "palmeiras", "são paulo", "vasco", "grêmio", "cruzeiro",
+                    "atlético", "neymar", "vini", "ancelotti", "casimiro", "cazé"],
+        "gatilhos": {"gol": 3, "golaço": 5, "golaco": 5, "pênalti": 3, "penalti": 3, "var": 3,
+                     "impedido": 3, "impedimento": 3, "roubado": 4, "roubo": 3, "juiz": 2,
+                     "expulso": 4, "vermelho": 3, "amarelo": 2, "na trave": 4, "defendeu": 3,
+                     "virada": 4, "acabou": 2, "campeão": 5, "campeao": 5, "rebaixado": 4,
+                     "chupa": 4, "que fase": 3, "é tetra": 5, "hexa": 5},
+    },
 }
 
 TITULOS = [
@@ -101,6 +217,28 @@ TITULOS = [
      ["O ASSALTO MAIS INSANO 🔥", "DEU TUDO ERRADO NO ASSALTO 😬"]),
     ("grafico", ("gráfico", "grafico", "lindo", "realista"),
      ["OS GRÁFICOS SÃO SURREAIS 🤯", "O REALISMO DESSE JOGO ASSUSTA 😳"]),
+    ("cassino_win", ("pagou", "forrei", "forrou", "max win", "maxwin", "jackpot", "green", "x1000",
+                     "x500", "mega win", "big win", "carta solta", "soltou", "triplicou"),
+     ["A SLOT PAGOU DEMAIS 🤑", "{S} FORROU NO CASSINO 💰", "ESSE MULTIPLICADOR FOI INSANO 🤯"]),
+    ("cassino_loss", ("zerei", "zerou", "quebrei", "perdi tudo", "não pagou", "nao pagou", "red",
+                      "prejuízo", "prejuizo"),
+     ["{S} PERDEU TUDO 💀", "A SLOT NÃO PERDOOU 😭", "DEU RED FEIO 💀"]),
+    ("queda", ("caí", "caiu", "caímos", "voltei tudo", "do começo", "escorreguei", "me puxou"),
+     ["CAIU DO TOPO 😭", "{S} VOLTOU TUDO DO COMEÇO 💀", "A QUEDA MAIS DOLORIDA 😭"]),
+    ("traicao", ("traíra", "traira", "traiu", "impostor", "impostora", "mentiroso", "me empurrou"),
+     ["A TRAIÇÃO FOI REAL 🐍", "{S} FOI TRAÍDO 🐍", "O MENTIROSO FOI DESCOBERTO 🤥"]),
+    ("boss", ("matei o boss", "matei o chefe", "derrotei", "finalmente"),
+     ["{S} FINALMENTE CONSEGUIU 😤", "DEPOIS DE MIL TENTATIVAS 😮‍💨"]),
+    ("raid", ("raid", "raidaram", "roubaram", "c4"),
+     ["RAIDARAM A BASE DE {S} 💣", "PERDEU TUDO NA RAID 💀"]),
+    ("shiny", ("shiny", "lendário", "lendario", "capturei"),
+     ["{S} ACHOU UM SHINY ✨", "CAPTUROU O LENDÁRIO 😱"]),
+    ("irl", ("expulsaram", "expulso", "segurança", "tombo", "me reconheceu", "pegadinha"),
+     ["DEU RUIM NA RUA 😬", "{S} PASSOU VERGONHA 😳", "ISSO ACONTECEU AO VIVO 😱"]),
+    ("react", ("volta volta", "volta aí", "pausa aí", "mentira", "isso é real", "cringe", "que vergonha"),
+     ["{S} NÃO ACREDITOU NO QUE VIU 😳", "A REAÇÃO DE {S} 😂", "ELE TEVE QUE VOLTAR O VÍDEO 👀"]),
+    ("futebol", ("golaço", "golaco", "var", "roubado", "campeão", "campeao", "hexa", "expulso"),
+     ["A REAÇÃO DE {S} AO GOL ⚽", "{S} FICOU REVOLTADO COM O JUIZ 😡", "QUE JOGO FOI ESSE ⚽🔥"]),
     ("reacao", ("meu deus", "não acredito", "nao acredito", "caraca", "que isso", "mds", "no way"),
      ["{S} NÃO ACREDITOU NISSO 😳", "A REAÇÃO DE {S} FOI ÉPICA 😱"]),
 ]
@@ -202,9 +340,36 @@ def slug(txt):
     return re.sub(r"[^a-z0-9]+", "-", t.lower()).strip("-") or "desconhecido"
 
 
+_CACHE_RE = {}
+
+
+def _regex_gatilhos(gatilhos):
+    """Um regex só com todos os gatilhos. Palavra inteira, para "ai" não contar em "mais"
+    nem "gol" em "golpe". Termine com * para aceitar continuação ("atropel*" pega atropelou)."""
+    chave = id(gatilhos), len(gatilhos)
+    if chave not in _CACHE_RE:
+        itens = sorted(gatilhos.items(), key=lambda kv: -len(kv[0]))
+        partes, pesos = [], []
+        for g, p in itens:
+            g = g.lower().strip()
+            if not g:
+                continue
+            if g.endswith("*"):
+                partes.append("(" + re.escape(g[:-1]) + r"\w*)")
+            else:
+                partes.append("(" + re.escape(g) + r")(?!\w)")
+            pesos.append(p)
+        rx = re.compile(r"(?<!\w)(?:" + "|".join(partes) + ")") if partes else None
+        _CACHE_RE.clear()
+        _CACHE_RE[chave] = (rx, pesos)
+    return _CACHE_RE[chave]
+
+
 def conta_gatilhos(texto, gatilhos):
-    t = texto.lower()
-    return sum(t.count(g) * p for g, p in gatilhos.items())
+    rx, pesos = _regex_gatilhos(gatilhos)
+    if rx is None:
+        return 0
+    return sum(pesos[m.lastindex - 1] for m in rx.finditer(texto.lower()))
 
 
 # ============================================================================
@@ -321,8 +486,10 @@ def detectar_pacotes(titulo, transcript):
     falado = " ".join(s["text"] for s in transcript[:4000]).lower()
     achados = []
     for nome, p in PACOTES.items():
-        no_titulo = any(d in texto for d in p["detecta"])
-        na_fala = sum(falado.count(d) for d in p["detecta"])
+        # palavra inteira: "pes" não pode bater em "pessoal", "lol" em "lolzinho" etc.
+        regs = [re.compile(r"(?<!\w)" + re.escape(d) + r"(?!\w)") for d in p["detecta"]]
+        no_titulo = any(r.search(texto) for r in regs)
+        na_fala = sum(len(r.findall(falado)) for r in regs)
         if no_titulo or na_fala >= 5:
             achados.append(nome)
     return achados

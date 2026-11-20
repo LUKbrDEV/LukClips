@@ -930,7 +930,9 @@ Style: Marca,Arial,26,&H90FFFFFF,&H90FFFFFF,&H90000000,&H00000000,0,0,0,0,100,10
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 """
-        ev = [f"Dialogue: 2,{ts(0)},{ts(min(4, dur_final))},Tit,,0,0,0,,{{\\fad(150,300)}}{titulo}"]
+        ev = []
+        if self.cfg.get("titulo_video", True) and titulo.strip():
+            ev.append(f"Dialogue: 2,{ts(0)},{ts(min(4, dur_final))},Tit,,0,0,0,,{{\\fad(150,300)}}{titulo}")
         if self.cfg.get("marca", "").strip():
             ev.append(f"Dialogue: 1,{ts(0)},{ts(dur_final)},Marca,,0,0,0,,{self.cfg['marca'].strip()}")
         n = e["palavras"]
@@ -1266,7 +1268,7 @@ CONFIG_PADRAO = {
     "cortes": 5, "duracao": "Automática (20–90s)", "modelo": "Equilibrado (small)",
     "usar_chat": True, "usar_movimento": True,
     "layout": "Câmera em cima (50/50)", "estilo_legenda": "Clássico (branco + amarelo)",
-    "zoom_pico": False, "cortar_silencio": False, "barra_progresso": True, "revisar": True,
+    "zoom_pico": False, "cortar_silencio": False, "barra_progresso": True, "titulo_video": True, "revisar": True,
     "idioma": "Português", "usar_gpu": True, "hashtags_fixas": "",
     "camera": "Automática", "navegador": "Nenhum", "streamer": "",
     "pular_inicio": 300, "marca": "Feito por LukDev",
@@ -1631,7 +1633,7 @@ def iniciar_interface():
         def __init__(self, master, app, bg=COR_CARD):
             super().__init__(master, width=156, height=278, bg=bg, highlightthickness=0)
             self.app = app
-            for v in (app.var_layout, app.var_estilo, app.var_barra):
+            for v in (app.var_layout, app.var_estilo, app.var_barra, app.var_titulo):
                 v.trace_add("write", lambda *_: self.desenhar())
             self.after(40, self.desenhar)
 
@@ -1676,8 +1678,9 @@ def iniciar_interface():
                 emenda = y0 + h * 0.79
             self.create_rectangle(x0, y1, x1, y1 + 5, fill="#050508", outline="")
             # título no topo
-            self.create_rectangle(x0 + 22, y0 + 8, x1 - 22, y0 + 22, fill="#000000", outline="")
-            self.create_text((x0 + x1) / 2, y0 + 15, text="TÍTULO DO CORTE", fill="white", font=("Segoe UI", 6, "bold"))
+            if self.app.var_titulo.get():
+                self.create_rectangle(x0 + 22, y0 + 8, x1 - 22, y0 + 22, fill="#000000", outline="")
+                self.create_text((x0 + x1) / 2, y0 + 15, text="TÍTULO DO CORTE", fill="white", font=("Segoe UI", 6, "bold"))
             e = ESTILOS_LEGENDA.get(self.app.var_estilo.get(), ESTILOS_LEGENDA[ESTILO_PADRAO])
             _texto_legenda(self, (x0 + x1) / 2, emenda, e, 10, "ELE NÃO ", "ACREDITOU")
             if self.app.var_barra.get():
@@ -2507,6 +2510,7 @@ def iniciar_interface():
             self.var_zoom = tk.BooleanVar(value=c["zoom_pico"])
             self.var_silencio = tk.BooleanVar(value=c["cortar_silencio"])
             self.var_barra = tk.BooleanVar(value=c["barra_progresso"])
+            self.var_titulo = tk.BooleanVar(value=c.get("titulo_video", True))
             self.var_revisar = tk.BooleanVar(value=c["revisar"])
             self.var_desligar = tk.BooleanVar(value=False)
             self.var_idioma = tk.StringVar(value=c.get("idioma", "Português"))
@@ -2697,7 +2701,8 @@ def iniciar_interface():
             EscolhaLegenda(est, self.var_estilo).pack(anchor="w")
             chaves = tk.Frame(est, bg=COR_CARD)
             chaves.pack(fill="x", pady=(10, 0))
-            for i, (t, v) in enumerate((("Barra de progresso", self.var_barra), ("Zoom no pico", self.var_zoom),
+            for i, (t, v) in enumerate((("Barra de progresso", self.var_barra), ("Título no vídeo", self.var_titulo),
+                                        ("Zoom no pico", self.var_zoom),
                                         ("Cortar silêncios", self.var_silencio),
                                         ("Revisar antes de gerar", self.var_revisar))):
                 Chave(chaves, t, v).grid(row=i // 2, column=i % 2, sticky="w", padx=(0, 24), pady=4)
@@ -3217,7 +3222,7 @@ def iniciar_interface():
                 "pular_inicio": pular, "marca": self.var_marca.get(),
                 "layout": self.var_layout.get(), "estilo_legenda": self.var_estilo.get(),
                 "zoom_pico": bool(self.var_zoom.get()), "cortar_silencio": bool(self.var_silencio.get()),
-                "barra_progresso": bool(self.var_barra.get()), "revisar": bool(self.var_revisar.get()),
+                "barra_progresso": bool(self.var_barra.get()), "titulo_video": bool(self.var_titulo.get()), "revisar": bool(self.var_revisar.get()),
                 "idioma": self.var_idioma.get() if self.var_idioma.get() in IDIOMAS else "Português",
                 "usar_gpu": bool(self.var_gpu.get()), "hashtags_fixas": self.var_hashtags.get().strip(),
             }

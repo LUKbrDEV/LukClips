@@ -19,6 +19,7 @@ import sys
 import threading
 import time
 import traceback
+import urllib.error
 import urllib.request
 import wave
 from datetime import datetime
@@ -31,7 +32,7 @@ import momentos as M  # noqa: E402
 import visual as V  # noqa: E402
 
 APP = "LukClips"
-VERSAO = "3.0.2"
+VERSAO = "3.0.3"
 os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
 
 # No .exe sem console, stdout/stderr não existem e barras de progresso de
@@ -975,6 +976,19 @@ def formatar_tamanho(b):
         b /= 1024
 
 
+def abrir_url(req, timeout=15):
+    """urlopen com certificados do Windows; se falhar o certificado, tenta os do certifi."""
+    import ssl
+    try:
+        return urllib.request.urlopen(req, timeout=timeout)
+    except urllib.error.URLError as e:
+        if not isinstance(getattr(e, "reason", None), ssl.SSLError):
+            raise
+        import certifi
+        ctx = ssl.create_default_context(cafile=certifi.where())
+        return urllib.request.urlopen(req, timeout=timeout, context=ctx)
+
+
 def _versao_tupla(v):
     return tuple(int(x) for x in re.findall(r"\d+", str(v))[:3]) or (0,)
 
@@ -986,7 +1000,7 @@ def buscar_atualizacao():
     req = urllib.request.Request(f"https://api.github.com/repos/{REPO_GITHUB}/releases/latest",
                                  headers={"User-Agent": f"{APP}/{VERSAO}",
                                           "Accept": "application/vnd.github+json"})
-    with urllib.request.urlopen(req, timeout=15) as r:
+    with abrir_url(req, timeout=15) as r:
         rel = json.loads(r.read().decode("utf-8"))
     versao = str(rel.get("tag_name", "")).lstrip("vV")
     if not versao or _versao_tupla(versao) <= _versao_tupla(VERSAO):
@@ -1810,6 +1824,8 @@ def iniciar_interface():
             self.after(300, self._checar_dependencias)
             self.after(600, self._calcular_cache)
             self.after(2500, self._procurar_atualizacao)
+            self._ja_avisou = set()
+            self.after(2 * 3600 * 1000, self._procurar_periodico)
             self.after(800, self._avisar_se_atualizou)
             self.report_callback_exception = self._erro_inesperado
             threading.excepthook = lambda a: self.fila.put(
@@ -1900,6 +1916,10 @@ def iniciar_interface():
             self.lbl_dep = tk.Label(self.cv, text="", bg="#1B1B26", fg=COR_SUAVE, font=("Segoe UI", 9),
                                     padx=10, pady=4)
             self.item_dep = self.cv.create_window(0, 30, window=self.lbl_dep, anchor="ne")
+            self.lbl_ver = tk.Label(self.cv, text=f"v{VERSAO} · procurando atualização...", bg="#1B1B26",
+                                    fg=COR_SUAVE, font=("Segoe UI", 9), padx=10, pady=4, cursor="hand2")
+            self.lbl_ver.bind("<Button-1>", lambda e: self._procurar_atualizacao(manual=True))
+            self.item_ver = self.cv.create_window(0, 30, window=self.lbl_ver, anchor="ne")
             # rodapé
             self.cv.create_text(0, 0, text=f"v{VERSAO}  ·  procurar atualização", anchor="sw", fill="#6A6680",
                                 font=("Segoe UI", 8, "underline"), tags="rod_v")
@@ -2111,6 +2131,12 @@ def iniciar_interface():
                 self.cv.coords(item, x_dir, y_dir)
                 self.cv.itemconfigure(item, width=larg_dir, height=max(200, H - ROD - y_dir - 4))
             self.cv.coords(self.item_dep, W - M, 34)
+            self.cv.coords(self.item_ver, W - M - self.lbl_dep.winfo_reqwidth() - 8, 34)
+            # não deixa a janela ficar baixa a ponto de cortar as opções
+            precisa = min(y + ROD + 10, self.winfo_screenheight() - 80)
+            if self.winfo_height() < precisa and getattr(self, "_min_alt", 0) != precisa:
+                self._min_alt = precisa
+                self.minsize(self.minsize()[0], precisa)
             self.cv.coords("rod_v", M, H - 6)
             self.cv.coords("rod_l", W - M, H - 6)
             # fundo: redesenha só depois que parar de redimensionar
@@ -2510,11 +2536,24 @@ def iniciar_interface():
                 except Exception as e:
                     logging.warning("atualização: %s", e)
                     info = {"erro": str(e)}
-                if info or manual:
-                    self.fila.put(("atualizacao", dict(info or {}, manual=manual)))
+                self.fila.put(("atualizacao", dict(info or {}, manual=manual)))
             threading.Thread(target=tarefa, daemon=True).start()
 
+        def _procurar_periodico(self):
+            if not self.rodando:
+                self._procurar_atualizacao()
+            self.after(2 * 3600 * 1000, self._procurar_periodico)
+
         def _oferecer_atualizacao(self, info):
+            if info.get("erro"):
+                self.lbl_ver.config(text=f"v{VERSAO} · sem conexão (clique p/ tentar)", fg="#FFB020")
+            elif info.get("versao"):
+                self.lbl_ver.config(text=f"⬆ v{info['versao']} disponível — clique", fg="#FFB020")
+            elif REPO_GITHUB:
+                self.lbl_ver.config(text=f"✓ v{VERSAO} · atualizado", fg="#3DD68C")
+            else:
+                self.lbl_ver.config(text=f"v{VERSAO}", fg=COR_SUAVE)
+            self.after(30, self._ao_redimensionar)
             if info.get("erro"):
                 if info.get("manual"):
                     messagebox.showinfo(APP, f"Não consegui procurar atualização agora.\n\n{info['erro']}")
@@ -2525,6 +2564,10 @@ def iniciar_interface():
                            "A atualização automática ainda não foi configurada (REPO_GITHUB vazio).")
                     messagebox.showinfo(APP, msg)
                 return
+            if not info.get("manual") and info["versao"] in self._ja_avisou:
+                return
+            self._ja_avisou.add(info["versao"])
+            logging.info("Atualização disponível: v%s", info["versao"])
             if not messagebox.askyesno(APP, f"Tem uma versão nova do LukClips: v{info['versao']} "
                                             f"(você tem a v{VERSAO}).\n\n{info.get('notas', '')[:400]}\n\n"
                                             "Atualizar agora?"):
@@ -2538,7 +2581,7 @@ def iniciar_interface():
             def baixar():
                 try:
                     destino = Path(os.environ.get("TEMP", PASTA_CONFIG)) / f"LukClips_Setup_{info['versao']}.exe"
-                    with urllib.request.urlopen(info["instalador"], timeout=60) as r, open(destino, "wb") as f:
+                    with abrir_url(info["instalador"], timeout=60) as r, open(destino, "wb") as f:
                         tot = int(r.headers.get("Content-Length") or 0)
                         feito = 0
                         while True:

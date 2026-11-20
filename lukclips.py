@@ -32,7 +32,7 @@ import momentos as M  # noqa: E402
 import visual as V  # noqa: E402
 
 APP = "LukClips"
-VERSAO = "3.1.0"
+VERSAO = "3.2.0"
 os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
 
 # No .exe sem console, stdout/stderr não existem e barras de progresso de
@@ -76,12 +76,15 @@ def _json_seguro(o):
     return str(o)
 
 
+PASTA_CUDA = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / APP / "cuda"
+
+
 def _registrar_cuda():
     """Se as bibliotecas da NVIDIA (pip nvidia-cublas-cu12 / nvidia-cudnn-cu12) estiverem
     instaladas, ou ao lado do .exe, avisa o Windows onde estão as DLLs."""
     if os.name != "nt":
         return
-    pastas = [PASTA_APP, PASTA_APP / "cuda"]
+    pastas = [PASTA_APP, PASTA_APP / "cuda", PASTA_CUDA]
     try:
         import site
         for base in site.getsitepackages() + [site.getusersitepackages()]:
@@ -100,6 +103,184 @@ def _registrar_cuda():
 
 
 _registrar_cuda()
+
+
+PACOTES_CUDA = [("nvidia-cublas-cu12", None), ("nvidia-cudnn-cu12", 9)]
+
+
+def baixar_cuda(progresso=lambda pct, txt: None, cancelado=lambda: False):
+    """Baixa cuBLAS 12 e cuDNN 9 (pacotes oficiais da NVIDIA no PyPI) e guarda só as DLLs
+    em PASTA_CUDA. Não precisa de Python nem de pip no PC."""
+    import tempfile
+    import zipfile
+    PASTA_CUDA.mkdir(parents=True, exist_ok=True)
+    arquivos = []
+    for nome, maior in PACOTES_CUDA:
+        progresso(0, f"Procurando {nome}...")
+        with abrir_url(urllib.request.Request(f"https://pypi.org/pypi/{nome}/json",
+                                              headers={"User-Agent": f"{APP}/{VERSAO}"}), 20) as r:
+            dados = json.loads(r.read().decode("utf-8"))
+        versoes = sorted(dados.get("releases", {}), key=_versao_tupla, reverse=True)
+        escolhido = None
+        for v in versoes:
+            if maior is not None and _versao_tupla(v)[0] != maior:
+                continue
+            if re.search(r"[a-zA-Z]", v.split("+")[0].replace(".", "")):
+                continue  # pula versões de teste (rc, beta)
+            roda = [f for f in dados["releases"][v] if f["filename"].endswith("win_amd64.whl")]
+            if roda:
+                escolhido = roda[0]
+                break
+        if not escolhido:
+            raise RuntimeError(f"Não achei {nome} para Windows.")
+        arquivos.append(escolhido)
+    total = sum(f.get("size", 0) for f in arquivos) or 1
+    feito = 0
+    for f in arquivos:
+        tmp = Path(tempfile.gettempdir()) / f["filename"]
+        with abrir_url(urllib.request.Request(f["url"], headers={"User-Agent": f"{APP}/{VERSAO}"}), 60) as r, \
+                open(tmp, "wb") as out:
+            while True:
+                if cancelado():
+                    raise InterruptedError()
+                bloco = r.read(1 << 20)
+                if not bloco:
+                    break
+                out.write(bloco)
+                feito += len(bloco)
+                progresso(feito / total * 95, f"Baixando bibliotecas da NVIDIA... "
+                                              f"{feito / 1e6:.0f} de {total / 1e6:.0f} MB")
+        progresso(feito / total * 95, "Extraindo...")
+        with zipfile.ZipFile(tmp) as z:
+            for m in z.namelist():
+                if re.match(r"nvidia/[^/]+/bin/[^/]+\.dll$", m):
+                    with z.open(m) as src, open(PASTA_CUDA / Path(m).name, "wb") as dst:
+                        shutil.copyfileobj(src, dst)
+        tmp.unlink(missing_ok=True)
+    progresso(100, "Pronto!")
+    _registrar_cuda()
+
+
+# ---------------------------------------------------------------- AMD / Intel (Vulkan)
+PASTA_VULKAN = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / APP / "whisper-vulkan"
+PASTA_MODELOS_GGML = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / APP / "modelos"
+REPO_VULKAN = "lemonade-sdk/whisper.cpp-rocm"
+URL_VULKAN_RESERVA = ("https://github.com/lemonade-sdk/whisper.cpp-rocm/releases/download/v1.8.4/"
+                      "whisper-v1.8.4-release-windows-vulkan-x64.zip")
+URL_MODELO_GGML = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-{}.bin"
+
+
+def vulkan_exe():
+    """Caminho do whisper-cli.exe com Vulkan, se já foi baixado."""
+    if not PASTA_VULKAN.is_dir():
+        return None
+    achados = sorted(PASTA_VULKAN.rglob("whisper-cli.exe")) or sorted(PASTA_VULKAN.rglob("main.exe"))
+    return achados[0] if achados else None
+
+
+def detectar_placas():
+    """Nomes das placas de vídeo do PC (Windows)."""
+    if os.name != "nt":
+        return []
+    try:
+        out = subprocess.check_output(
+            ["powershell", "-NoProfile", "-Command", "(Get-CimInstance Win32_VideoController).Name"],
+            timeout=20, **SEM_JANELA)
+        return [l.strip() for l in out.decode("utf-8", "replace").splitlines() if l.strip()]
+    except Exception:
+        return []
+
+
+def _baixar_arquivo(url, destino, progresso, cancelado, base=0, faixa=100, rotulo="Baixando"):
+    req = urllib.request.Request(url, headers={"User-Agent": f"{APP}/{VERSAO}"})
+    tmp = Path(str(destino) + ".part")
+    with abrir_url(req, 60) as r, open(tmp, "wb") as out:
+        tot = int(r.headers.get("Content-Length") or 0)
+        feito = 0
+        while True:
+            if cancelado():
+                raise InterruptedError()
+            bloco = r.read(1 << 20)
+            if not bloco:
+                break
+            out.write(bloco)
+            feito += len(bloco)
+            if tot:
+                progresso(base + faixa * feito / tot, f"{rotulo}... {feito / 1e6:.0f} de {tot / 1e6:.0f} MB")
+    tmp.replace(destino)
+
+
+def baixar_vulkan(progresso=lambda pct, txt: None, cancelado=lambda: False):
+    """Baixa o whisper.cpp com Vulkan (funciona em AMD, Intel e NVIDIA) e o modelo 'small'."""
+    import tempfile
+    import zipfile
+    progresso(0, "Procurando o whisper.cpp com Vulkan...")
+    url = None
+    try:
+        req = urllib.request.Request(f"https://api.github.com/repos/{REPO_VULKAN}/releases/latest",
+                                     headers={"User-Agent": f"{APP}/{VERSAO}",
+                                              "Accept": "application/vnd.github+json"})
+        with abrir_url(req, 20) as r:
+            rel = json.loads(r.read().decode("utf-8"))
+        for a in rel.get("assets", []):
+            n = a.get("name", "").lower()
+            if "windows" in n and "vulkan" in n and n.endswith(".zip"):
+                url = a["browser_download_url"]
+                break
+    except Exception as e:
+        logging.warning("procurar whisper.cpp vulkan: %s", e)
+    url = url or URL_VULKAN_RESERVA
+    zip_tmp = Path(tempfile.gettempdir()) / "lukclips_whisper_vulkan.zip"
+    _baixar_arquivo(url, zip_tmp, progresso, cancelado, 0, 30, "Baixando o whisper.cpp (Vulkan)")
+    if PASTA_VULKAN.exists():
+        shutil.rmtree(PASTA_VULKAN, ignore_errors=True)
+    PASTA_VULKAN.mkdir(parents=True, exist_ok=True)
+    with zipfile.ZipFile(zip_tmp) as z:
+        z.extractall(PASTA_VULKAN)
+    zip_tmp.unlink(missing_ok=True)
+    if not vulkan_exe():
+        raise RuntimeError("O pacote baixado não tem o whisper-cli.exe.")
+    baixar_modelo_ggml("small", progresso, cancelado, 30, 70)
+    progresso(100, "Pronto!")
+
+
+def baixar_modelo_ggml(nome, progresso=lambda pct, txt: None, cancelado=lambda: False, base=0, faixa=100):
+    PASTA_MODELOS_GGML.mkdir(parents=True, exist_ok=True)
+    destino = PASTA_MODELOS_GGML / f"ggml-{nome}.bin"
+    if destino.exists() and destino.stat().st_size > 10_000_000:
+        return destino
+    _baixar_arquivo(URL_MODELO_GGML.format(nome), destino, progresso, cancelado, base, faixa,
+                    f"Baixando o modelo de transcrição ({nome})")
+    return destino
+
+
+def ler_saida_whispercpp(arq_json):
+    """Converte o JSON do whisper.cpp (uma palavra por item, com -ml 1 -sow) no formato do LukClips:
+    trechos (frases) com o tempo de cada palavra."""
+    dados = json.loads(Path(arq_json).read_bytes().decode("utf-8", "replace"))
+    palavras = []
+    for item in dados.get("transcription", []):
+        txt = (item.get("text") or "").strip()
+        off = item.get("offsets") or {}
+        if not txt or txt.startswith("[") or txt.startswith("("):
+            continue                     # [Música], (risos) e marcas do modelo
+        palavras.append({"start": off.get("from", 0) / 1000, "end": off.get("to", 0) / 1000, "word": txt})
+    trechos, atual = [], []
+
+    def fecha():
+        if atual:
+            trechos.append({"start": atual[0]["start"], "end": atual[-1]["end"], "nsp": 0,
+                            "text": " ".join(w["word"] for w in atual), "words": list(atual)})
+            atual.clear()
+
+    for w in palavras:
+        if atual and (w["start"] - atual[-1]["end"] > 0.8 or len(atual) >= 14):
+            fecha()
+        atual.append(w)
+        if w["word"][-1:] in ".!?":
+            fecha()
+    fecha()
+    return trechos
 
 
 def cuda_disponivel():
@@ -491,11 +672,19 @@ class Fabrica:
             arq.write_text(json.dumps(dados, ensure_ascii=False, default=_json_seguro), encoding="utf-8")
             return dados
         self.prog(28, "Carregando o Whisper (na 1ª vez ele baixa o modelo)...")
-        from faster_whisper import WhisperModel
         with wave.open(str(wav)) as wf:
             audio = np.frombuffer(wf.readframes(wf.getnframes()), dtype=np.int16)
         audio = audio.astype(np.float32) / 32768.0
 
+        if self.cfg.get("usar_gpu", True) and not cuda_disponivel() and vulkan_exe():
+            try:
+                return self._salvar_transcricao(arq, self._transcrever_vulkan(wav, pasta, dur_total))
+            except Cancelado:
+                raise
+            except Exception as e:
+                logging.exception("whisper.cpp vulkan")
+                self.log(f"⚠ A placa AMD/Intel falhou ({str(e)[:80]}). Usando o processador...")
+        from faster_whisper import WhisperModel
         usar_gpu = self.cfg.get("usar_gpu", True) and cuda_disponivel()
         m = None
         if usar_gpu:
@@ -524,6 +713,48 @@ class Fabrica:
             m = WhisperModel(self.cfg["modelo"], device="cpu", compute_type="int8")
             dados = self._rodar_whisper(m, audio, dur_total)
         arq.write_text(json.dumps(dados, ensure_ascii=False, default=_json_seguro), encoding="utf-8")
+        return dados
+
+    def _salvar_transcricao(self, arq, dados):
+        arq.write_text(json.dumps(dados, ensure_ascii=False, default=_json_seguro), encoding="utf-8")
+        return dados
+
+    def _transcrever_vulkan(self, wav, pasta, dur_total):
+        """Transcreve com o whisper.cpp + Vulkan (placas AMD, Intel ou NVIDIA sem CUDA)."""
+        exe = vulkan_exe()
+        nome = self.cfg.get("modelo", "small")
+        self.prog(28, "Preparando a placa de vídeo (Vulkan)...")
+        modelo = baixar_modelo_ggml(nome, lambda p, t: self.prog(28, t), self.cancel.is_set)
+        saida = pasta / f"whispercpp_{nome}"
+        idioma = self.cfg.get("idioma", "pt") or "auto"
+        threads = str(max(2, min(8, (os.cpu_count() or 4) - 1)))
+        args = [str(exe), "-m", str(modelo), "-f", str(wav), "-l", idioma, "-t", threads,
+                "-ml", "1", "-sow", "-oj", "-of", str(saida), "-pp"]
+        self.log(f"🎮 Usando a placa de vídeo pelo Vulkan (whisper.cpp, modelo {nome})")
+        self.proc = subprocess.Popen(args, cwd=str(exe.parent), stdout=subprocess.PIPE,
+                                     stderr=subprocess.STDOUT, text=True, encoding="utf-8",
+                                     errors="replace", **SEM_JANELA)
+        inicio, ultimas = time.time(), []
+        for linha in self.proc.stdout:
+            if self.cancel.is_set():
+                self.proc.kill()
+                raise Cancelado()
+            ultimas = (ultimas + [linha.rstrip()])[-12:]
+            m = re.search(r"progress\s*=\s*(\d+)%", linha)
+            if m:
+                pct = int(m.group(1)) / 100
+                gasto = time.time() - inicio
+                resta = gasto / pct - gasto if pct > 0.02 else 0
+                falta = f" — faltam ~{resta / 60:.0f} min" if resta else ""
+                self.prog(28 + 40 * pct, f"Transcrevendo na placa de vídeo... {pct * 100:.0f}%{falta}")
+        self.proc.wait()
+        if self.proc.returncode != 0 or not Path(str(saida) + ".json").exists():
+            raise RuntimeError("whisper.cpp terminou com erro: " + " | ".join(ultimas[-4:]))
+        dados = ler_saida_whispercpp(str(saida) + ".json")
+        if not dados:
+            raise RuntimeError("whisper.cpp não devolveu fala.")
+        for t in dados[-3:]:
+            self.log(f"  [{ts(t['start'])[:-3]}] {t['text']}")
         return dados
 
     def _rodar_whisper(self, m, audio, dur_total):
@@ -2731,7 +2962,7 @@ def iniciar_interface():
             self.lbl_gpu = tk.Label(g, text="Verificando a placa de vídeo...", bg=COR_CARD, fg=COR_SUAVE,
                                     font=("Segoe UI", 9), wraplength=420, justify="left")
             self.lbl_gpu.pack(anchor="w")
-            self.btn_gpu = ttk.Button(g, text="Como ativar a placa NVIDIA", style="Sec.TButton",
+            self.btn_gpu = ttk.Button(g, text="Ativar a placa de vídeo", style="Sec.TButton",
                                       command=self._ajuda_gpu)
 
             g = grupo(1, 0, "Análise dos momentos")
@@ -2776,51 +3007,91 @@ def iniciar_interface():
                 except Exception:
                     n = 0
                 pronta = cuda_disponivel() if n > 0 else False
-                self.fila.put(("gpu", (n, pronta)))
+                placas = detectar_placas()
+                outra = next((p for p in placas if re.search(r"AMD|Radeon|Intel.*Arc", p, re.I)), None)
+                self.fila.put(("gpu", {"nvidia": n, "cuda": pronta, "outra": outra,
+                                       "vulkan": bool(vulkan_exe()), "placas": placas}))
             threading.Thread(target=tarefa, daemon=True).start()
 
-        def _ajuda_gpu(self):
-            if getattr(sys, "frozen", False):
-                messagebox.showinfo(APP, "Para usar a placa NVIDIA no LukClips instalado, instale o "
-                                         "“CUDA Toolkit 12” do site da NVIDIA e reinicie o computador.\n\n"
-                                         "Sem isso, o LukClips continua funcionando pelo processador.")
-                return
-            cmd = 'pip install nvidia-cublas-cu12 "nvidia-cudnn-cu12==9.*"'
+        def _ajuda_gpu(self, tipo="nvidia"):
+            vulkan = tipo == "vulkan"
             j = tk.Toplevel(self)
-            j.title("Ativar a placa NVIDIA")
+            j.title("Ativar a placa AMD / Intel" if vulkan else "Ativar a placa NVIDIA")
             j.configure(bg=COR_FUNDO)
             j.resizable(False, False)
-            tk.Label(j, text="Ativar a placa NVIDIA", bg=COR_FUNDO, fg=COR_TEXTO,
-                     font=("Segoe UI", 12, "bold")).pack(anchor="w", padx=18, pady=(16, 4))
-            tk.Label(j, text="Instala as bibliotecas da NVIDIA (uns 700 MB). Depois feche e abra o LukClips.",
-                     bg=COR_FUNDO, fg=COR_SUAVE, font=("Segoe UI", 9)).pack(anchor="w", padx=18)
-            var = tk.StringVar(value=cmd)
-            ent = tk.Entry(j, textvariable=var, state="readonly", readonlybackground="#0E0D16", fg=COR_TEXTO,
-                           relief="flat", font=("Consolas", 10), width=58, highlightthickness=1,
-                           highlightbackground=COR_BORDA)
-            ent.pack(padx=18, pady=12, ipady=6)
-            ent.bind("<FocusIn>", lambda e: ent.select_range(0, "end"))
-            aviso = tk.Label(j, text="", bg=COR_FUNDO, fg="#3DD68C", font=("Segoe UI", 9))
-            aviso.pack(anchor="w", padx=18)
+            tk.Label(j, text="Ativar a placa AMD / Intel" if vulkan else "Ativar a placa NVIDIA", bg=COR_FUNDO,
+                     fg=COR_TEXTO, font=("Segoe UI", 12, "bold")).pack(anchor="w", padx=18, pady=(16, 4))
+            explica = ("O LukClips baixa o whisper.cpp com Vulkan e o modelo de transcrição (cerca de 500 MB)\n"
+                       "e guarda numa pasta dele. Funciona com o driver de vídeo normal da AMD ou Intel."
+                       if vulkan else
+                       "O LukClips baixa as bibliotecas oficiais da NVIDIA (cerca de 1 GB) e guarda numa "
+                       "pasta dele.\nNão precisa instalar nada mais. Depois é só fechar e abrir o LukClips.")
+            tk.Label(j, text=explica,
+                     bg=COR_FUNDO, fg=COR_SUAVE, font=("Segoe UI", 9), justify="left").pack(anchor="w", padx=18)
+            barra = ttk.Progressbar(j, mode="determinate", maximum=100, length=460)
+            barra.pack(padx=18, pady=(14, 6))
+            status = tk.Label(j, text="", bg=COR_FUNDO, fg=COR_SUAVE, font=("Segoe UI", 9))
+            status.pack(anchor="w", padx=18)
+            cancelar = threading.Event()
+            fila_j = queue.Queue()
 
-            def copiar():
-                self.clipboard_clear()
-                self.clipboard_append(cmd)
-                self.update()
-                aviso.config(text="Copiado! Cole no PowerShell com Ctrl+V e aperte Enter.")
+            def tarefa():
+                try:
+                    funcao = baixar_vulkan if vulkan else baixar_cuda
+                    funcao(lambda pct, txt: fila_j.put(("prog", pct, txt)), cancelar.is_set)
+                    fila_j.put(("ok", 100, ""))
+                except InterruptedError:
+                    fila_j.put(("cancelado", 0, ""))
+                except Exception as e:
+                    logging.exception("baixar CUDA")
+                    fila_j.put(("erro", 0, str(e)))
 
-            def instalar():
-                py = sys.executable.replace("pythonw.exe", "python.exe")
-                linha = f'"{py}" -m pip install nvidia-cublas-cu12 "nvidia-cudnn-cu12==9.*" & echo. & ' \
-                        'echo Pronto! Feche esta janela e abra o LukClips de novo. & pause'
-                subprocess.Popen(["cmd", "/c", linha], creationflags=0x00000010)  # janela nova
-                aviso.config(text="Instalando numa janela nova... quando terminar, reabra o LukClips.")
+            def acompanhar():
+                if not j.winfo_exists():
+                    cancelar.set()
+                    return
+                try:
+                    while True:
+                        tipo, pct, txt = fila_j.get_nowait()
+                        if tipo == "prog":
+                            barra["value"] = pct
+                            status.config(text=txt, fg=COR_SUAVE)
+                        elif tipo == "ok":
+                            barra["value"] = 100
+                            if vulkan:
+                                status.config(text="✓ Pronto! A próxima transcrição já usa a placa.", fg="#3DD68C")
+                                btn.config(text="Fechar", command=j.destroy)
+                                self._checar_gpu()
+                            else:
+                                status.config(text="✓ Pronto! Feche e abra o LukClips para usar a placa.", fg="#3DD68C")
+                                btn.config(text="Fechar o LukClips agora", command=self._fechar)
+                            btn.state(["!disabled"])
+                            return
+                        elif tipo == "cancelado":
+                            status.config(text="Cancelado.", fg=COR_SUAVE)
+                            btn.state(["!disabled"])
+                            return
+                        elif tipo == "erro":
+                            status.config(text=f"Não deu certo: {txt[:90]}", fg="#FFB020")
+                            btn.state(["!disabled"])
+                            return
+                except queue.Empty:
+                    pass
+                j.after(150, acompanhar)
+
+            def comecar():
+                btn.state(["disabled"])
+                status.config(text="Começando...", fg=COR_SUAVE)
+                threading.Thread(target=tarefa, daemon=True).start()
+                acompanhar()
 
             bar = tk.Frame(j, bg=COR_FUNDO)
-            bar.pack(fill="x", padx=18, pady=(8, 16))
-            ttk.Button(bar, text="Fechar", style="Sec.TButton", command=j.destroy).pack(side="right")
-            ttk.Button(bar, text="Copiar", style="Sec.TButton", command=copiar).pack(side="right", padx=8)
-            ttk.Button(bar, text="Instalar agora", style="Acao.TButton", command=instalar).pack(side="right")
+            bar.pack(fill="x", padx=18, pady=(12, 16))
+            ttk.Button(bar, text="Fechar", style="Sec.TButton",
+                       command=lambda: (cancelar.set(), j.destroy())).pack(side="right")
+            btn = ttk.Button(bar, text="Baixar e ativar", style="Acao.TButton", command=comecar)
+            btn.pack(side="right", padx=8)
+            j.protocol("WM_DELETE_WINDOW", lambda: (cancelar.set(), j.destroy()))
             j.transient(self)
             j.focus_force()
 
@@ -3152,16 +3423,26 @@ def iniciar_interface():
                             self.thumbs[id_] = img
                             lbl.config(image=img)
                     elif tipo == "gpu":
-                        n, pronta = dado
-                        if pronta:
+                        g = dado
+                        self.btn_gpu.pack_forget()
+                        if g["cuda"]:
                             self.lbl_gpu.config(text="✓ Placa NVIDIA pronta: transcrição rápida.", fg="#3DD68C")
-                        elif n:
+                        elif g["nvidia"]:
                             self.lbl_gpu.config(text="⚠ Placa NVIDIA encontrada, mas faltam as bibliotecas CUDA. "
                                                      "Por enquanto usa o processador.", fg="#FFB020")
+                            self.btn_gpu.config(text="Ativar a placa NVIDIA", command=lambda: self._ajuda_gpu("nvidia"))
+                            self.btn_gpu.pack(anchor="w", pady=(8, 0))
+                        elif g["outra"] and g["vulkan"]:
+                            self.lbl_gpu.config(text=f"✓ {g['outra']} pronta (Vulkan): transcrição pela placa.",
+                                                fg="#3DD68C")
+                        elif g["outra"]:
+                            self.lbl_gpu.config(text=f"⚠ {g['outra']} encontrada. Ative a aceleração para "
+                                                     "transcrever pela placa (bem mais rápido).", fg="#FFB020")
+                            self.btn_gpu.config(text="Ativar placa AMD / Intel", command=lambda: self._ajuda_gpu("vulkan"))
                             self.btn_gpu.pack(anchor="w", pady=(8, 0))
                         else:
-                            self.lbl_gpu.config(text="Nenhuma placa NVIDIA encontrada: usa o processador.",
-                                                fg=COR_SUAVE)
+                            nomes = ", ".join(g["placas"][:2]) or "nenhuma placa compatível"
+                            self.lbl_gpu.config(text=f"Usando o processador ({nomes}).", fg=COR_SUAVE)
                     elif tipo == "camera":
                         (png, fw, fh), fim = dado
                         SeletorCamera(self, png, fw, fh, fim)

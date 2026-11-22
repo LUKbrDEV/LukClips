@@ -67,7 +67,7 @@ footer{padding:20px;text-align:center;font-size:12px;color:#6f6a85}
         <li>Cole o serial, clique em Ativar e pronto.</li>
       </ol>
       <div class="acoes">
-        <a class="btn btn-main" href="https://github.com/LUKbrDEV/LukClips/releases/latest" target="_blank" rel="noopener">⬇ Baixar o LukClips</a>
+        <a class="btn btn-main" id="baixar" href="download.html">⬇ Baixar o LukClips</a>
         <a class="btn" href="./">Voltar ao site</a>
       </div>
     </section>
@@ -124,6 +124,15 @@ $("copiar").addEventListener("click", async () => {
   catch (e) { $("copiar").textContent = "Selecione e copie"; }
   setTimeout(() => { $("copiar").textContent = "Copiar"; }, 2000);
 });
+
+/* botão de download: baixa o instalador mais novo direto (sem abrir o GitHub) */
+fetch("https://api.github.com/repos/LUKbrDEV/LukClips/releases/latest")
+  .then(r => r.ok ? r.json() : Promise.reject())
+  .then(rel => {
+    const exe = (rel.assets || []).find(a => /\.exe$/i.test(a.name));
+    if (exe) { $("baixar").href = exe.browser_download_url; $("baixar").textContent = "⬇ Baixar o LukClips " + rel.tag_name; }
+  })
+  .catch(() => { /* fica apontando para a página de download do site */ });
 
 if (/^[0-9a-f]{32}$/.test(ref)) conferir();
 else problema("Link incompleto", "Abra esta página pelo link que o Mercado Pago mostrou depois do pagamento.");

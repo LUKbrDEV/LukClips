@@ -1,0 +1,3 @@
+# Instaladores ficam nas Releases, nunca no repositório
+*.exe
+*.zip

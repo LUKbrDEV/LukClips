@@ -185,6 +185,34 @@ footer{padding:28px max(5vw,16px);border-top:1px solid var(--line);color:var(--m
 footer .wrap{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center}
 footer a{text-decoration:none}footer a:hover{color:var(--ink)}
 .by{margin-left:auto;font-size:12px;opacity:.7}
+/* checkout */
+[hidden]{display:none!important}
+.mod{position:fixed;inset:0;z-index:60;background:rgba(6,5,12,.82);backdrop-filter:blur(6px);display:none;place-items:center;padding:16px}
+.mod.open{display:grid}
+.mbox{width:min(460px,100%);max-height:94vh;overflow:auto;background:var(--panel);border:1px solid #34314a;border-radius:20px;padding:26px;position:relative;box-shadow:0 40px 90px -30px #8b5cf6aa}
+.mx{position:absolute;top:12px;right:12px;width:40px;height:40px;border-radius:10px;border:0;background:#24222f;color:var(--ink);font-size:20px;cursor:pointer}
+.mbox h3{font-size:22px;padding-right:40px}
+.msub{color:var(--mute);font-size:15px;margin-top:4px}
+.opt{display:flex;align-items:center;gap:14px;width:100%;margin-top:12px;padding:16px;border-radius:14px;border:1px solid var(--line);background:#1e1c29;color:var(--ink);cursor:pointer;text-align:left;font:600 16px Inter,sans-serif}
+.opt:hover{border-color:var(--vio)}
+.opt small{display:block;color:var(--mute);font-weight:400;font-size:13.5px}
+.opt .tagp{margin-left:auto;background:#4ade8022;color:var(--ok);font:700 12px Inter,sans-serif;padding:4px 8px;border-radius:999px;white-space:nowrap}
+.opt svg{flex:none;width:28px;height:28px}
+.mbox label{display:block;font-size:14px;color:var(--mute);margin:18px 0 6px}
+.mbox input[type=email]{width:100%;min-height:50px;border-radius:12px;border:1px solid var(--line);background:#0f0e16;color:var(--ink);font:16px Inter,sans-serif;padding:0 14px}
+.mbox input:focus{outline:2px solid var(--vio);border-color:transparent}
+.mbox .btn{width:100%;margin-top:14px}
+.qr{display:grid;place-items:center;margin:18px auto 0;width:220px;height:220px;background:#fff;border-radius:14px;padding:10px}
+.qr img{width:100%;height:100%;image-rendering:pixelated}
+.cc{display:flex;gap:8px;margin-top:14px}
+.cc input{flex:1;min-height:46px;border-radius:10px;border:1px solid var(--line);background:#0f0e16;color:var(--mute);font:13px Consolas,monospace;padding:0 10px}
+.cc button{min-height:46px;padding:0 16px;border-radius:10px;border:0;background:var(--vio);color:#fff;font:700 14px Inter,sans-serif;cursor:pointer}
+.esp{display:flex;align-items:center;gap:10px;justify-content:center;margin-top:16px;color:var(--mute);font-size:14px}
+.esp i{flex:none;width:16px;height:16px;border-radius:50%;border:2px solid #8b5cf655;border-top-color:var(--vio2);animation:gira 1s linear infinite}
+@keyframes gira{to{transform:rotate(360deg)}}
+.merr{margin-top:12px;color:#fca5a5;font-size:14px}
+.mvolta{background:none;border:0;color:var(--vio2);font:600 14px Inter,sans-serif;cursor:pointer;margin-top:14px;padding:8px 0}
+@media(prefers-reduced-motion:reduce){.esp i{animation:none}}
 /* lightbox */
 .lb{position:fixed;inset:0;z-index:50;background:rgba(5,5,10,.92);display:none;place-items:center;padding:3vw;cursor:zoom-out}
 .lb.open{display:grid}
@@ -393,7 +421,7 @@ footer a{text-decoration:none}footer a:hover{color:var(--ink)}
       <svg viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M32 4l22 8v18c0 14-9.5 25-22 30C19.5 55 10 44 10 30V12z" fill="#4ade801f" stroke="#4ade80" stroke-width="3"/><path d="M22 32l7 7 14-15" stroke="#4ade80" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>
       <div><h3>Garantia incondicional de 7 dias</h3><p>Compre, use à vontade, gere quantos cortes quiser. Se não gostar por qualquer motivo, devolvemos 100% do valor em até 7 dias. O risco é todo nosso.</p></div>
     </div>
-    <p class="pay">Pagamento seguro pelo Mercado Pago, com Pix ou cartão. Seu serial aparece na hora, assim que o pagamento é aprovado.</p>
+    <p class="pay">Pix direto aqui no site ou cartão pelo Mercado Pago. Seu serial aparece na hora, assim que o pagamento é aprovado.</p>
   </div>
 </section>
 
@@ -440,39 +468,105 @@ footer a{text-decoration:none}footer a:hover{color:var(--ink)}
   </div>
 </footer>
 
+<div class="mod" id="mod" role="dialog" aria-modal="true" aria-labelledby="mTit">
+  <div class="mbox">
+    <button class="mx" id="mFechar" type="button" aria-label="Fechar">×</button>
+    <h3 id="mTit">LukClips</h3>
+    <p class="msub" id="mPreco"></p>
+    <div id="pEscolha">
+      <button class="opt" id="oPix" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2"><path d="M12 2l5 5-5 5-5-5zM12 12l5 5-5 5-5-5zM2 12l5-5 5 5-5 5zM12 12l5-5 5 5-5 5z"/></svg><span>Pix<small>Aprovação na hora, serial em segundos</small></span><span class="tagp">Recomendado</span></button>
+      <button class="opt" id="oCartao" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg><span>Cartão de crédito<small>Pagamento seguro pelo Mercado Pago</small></span></button>
+    </div>
+    <form id="pEmail" hidden>
+      <label for="mEmail">Seu e-mail (para o comprovante)</label>
+      <input type="email" id="mEmail" required autocomplete="email" placeholder="voce@email.com">
+      <button class="btn btn-main" type="submit" id="mGerar">Gerar Pix</button>
+      <button class="mvolta" type="button" data-volta>← Escolher outra forma</button>
+    </form>
+    <div id="pQr" hidden>
+      <div class="qr"><img id="mQr" alt="QR Code do Pix"></div>
+      <div class="cc"><input id="mCc" readonly aria-label="Código Pix copia e cola"><button id="mCopiar" type="button">Copiar</button></div>
+      <p class="esp"><i></i><span>Aguardando o pagamento... pague pelo app do seu banco. Esta janela avança sozinha.</span></p>
+    </div>
+    <p class="merr" id="mErr" hidden></p>
+  </div>
+</div>
+
+
 <div class="lb" id="lb" role="dialog" aria-label="Imagem ampliada"><img id="lbImg" alt=""></div>
 
 <script>
 {
-/* ===== Compra: os botões abrem o pagamento do Mercado Pago (Pix ou cartão) ===== */
+/* ===== Compra: Pix direto no site ou cartão pelo Mercado Pago ===== */
 const LOJA = "https://fcgtbdmpsqfusdmepvzh.supabase.co/functions/v1/loja";
 const LINK_EQUIPE = "";   /* WhatsApp ou e-mail para o plano Equipe (vazio = fica nos planos) */
 const testeCompra = new URLSearchParams(location.search).has("teste");
+const NOMES = {mensal: ["Plano Mensal", "R$ 19,90 · 30 dias"], vitalicio: ["Licença Vitalícia", "R$ 139,90 · pagamento único"]};
+const mod = document.getElementById("mod"), $m = id => document.getElementById(id);
+let planoAtual = "", timer = null;
+const api = async corpo => {
+  const r = await fetch(LOJA, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(corpo)});
+  return r.json();
+};
+const passo = id => ["pEscolha", "pEmail", "pQr"].forEach(x => { $m(x).hidden = x !== id; });
+const erro = t => { $m("mErr").textContent = t || ""; $m("mErr").hidden = !t; };
+const abrir = plano => {
+  planoAtual = testeCompra ? "teste" : plano;
+  $m("mTit").textContent = "LukClips · " + NOMES[plano][0];
+  $m("mPreco").textContent = testeCompra ? "Compra de TESTE · R$ 1,00" : NOMES[plano][1];
+  erro(""); passo("pEscolha"); mod.classList.add("open");
+};
+const fechar = () => { mod.classList.remove("open"); clearTimeout(timer); };
+$m("mFechar").addEventListener("click", fechar);
+mod.addEventListener("click", e => { if (e.target === mod) fechar(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && mod.classList.contains("open")) fechar(); });
+mod.querySelectorAll("[data-volta]").forEach(b => b.addEventListener("click", () => { erro(""); passo("pEscolha"); }));
 document.querySelectorAll("[data-buy]").forEach(a => {
   const plano = a.dataset.buy;
   if (plano === "equipe") {
     if (LINK_EQUIPE) { a.href = LINK_EQUIPE; a.target = "_blank"; a.rel = "noopener"; }
     return;
   }
-  const texto = a.textContent;
-  a.addEventListener("click", async e => {
-    e.preventDefault();
-    if (a.dataset.ocupado) return;
-    a.dataset.ocupado = "1";
-    a.textContent = "Abrindo pagamento...";
-    try {
-      const r = await fetch(LOJA, {method: "POST", headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({acao: "comprar", plano: testeCompra ? "teste" : plano})});
-      const d = await r.json();
-      if (!d.ok || !d.url) throw new Error(d.erro || "erro");
-      location.href = d.url;
-    } catch (err) {
-      a.textContent = "Tente de novo";
-      setTimeout(() => { a.textContent = texto; }, 2500);
-    } finally {
-      delete a.dataset.ocupado;
-    }
-  });
+  a.addEventListener("click", e => { e.preventDefault(); abrir(plano); });
+});
+$m("oCartao").addEventListener("click", async () => {
+  const b = $m("oCartao"); if (b.disabled) return;
+  b.disabled = true; erro("");
+  try {
+    const d = await api({acao: "comprar", plano: planoAtual});
+    if (!d.ok || !d.url) throw new Error(d.erro || "Não deu para abrir o pagamento.");
+    location.href = d.url;
+  } catch (err) { erro(err.message || "Não deu para abrir o pagamento. Tente de novo."); }
+  finally { b.disabled = false; }
+});
+$m("oPix").addEventListener("click", () => { erro(""); passo("pEmail"); setTimeout(() => $m("mEmail").focus(), 50); });
+$m("pEmail").addEventListener("submit", async e => {
+  e.preventDefault();
+  const b = $m("mGerar"); if (b.disabled) return;
+  b.disabled = true; b.textContent = "Gerando Pix..."; erro("");
+  try {
+    const d = await api({acao: "pix", plano: planoAtual, email: $m("mEmail").value});
+    if (!d.ok) throw new Error(d.erro || "Não deu para gerar o Pix.");
+    $m("mCc").value = d.copia_e_cola;
+    if (d.qr_base64) $m("mQr").src = "data:image/png;base64," + d.qr_base64;
+    $m("mQr").parentElement.hidden = !d.qr_base64;
+    passo("pQr");
+    const conferir = async () => {
+      try {
+        const p = await api({acao: "pedido", ref: d.ref});
+        if (p.ok && p.status === "aprovado") { location.href = "obrigado.html?ref=" + d.ref; return; }
+        if (p.ok && p.status === "recusado") { erro("O pagamento foi recusado. Tente de novo."); return; }
+      } catch (err) { /* tenta de novo */ }
+      timer = setTimeout(conferir, 4000);
+    };
+    timer = setTimeout(conferir, 4000);
+  } catch (err) { erro(err.message); }
+  finally { b.disabled = false; b.textContent = "Gerar Pix"; }
+});
+$m("mCopiar").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText($m("mCc").value); $m("mCopiar").textContent = "Copiado ✓"; }
+  catch (e) { $m("mCc").select(); $m("mCopiar").textContent = "Ctrl+C"; }
+  setTimeout(() => { $m("mCopiar").textContent = "Copiar"; }, 2000);
 });
 
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;

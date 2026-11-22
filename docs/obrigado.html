@@ -84,7 +84,7 @@ footer{padding:20px;text-align:center;font-size:12px;color:#6f6a85}
 <script>
 {
 const LOJA = "https://fcgtbdmpsqfusdmepvzh.supabase.co/functions/v1/loja";
-const PLANOS = {mensal: "Mensal (30 dias)", vitalicio: "Vitalício", teste: "(compra de teste)"};
+const PLANOS = {mensal: "Mensal (30 dias)", trimestral: "Trimestral (90 dias)", vitalicio: "Vitalício", teste: "(compra de teste)"};
 const ref = new URLSearchParams(location.search).get("ref") || "";
 const $ = id => document.getElementById(id);
 const mostrar = id => ["esperando", "aprovado", "problema"].forEach(s => { $(s).hidden = s !== id; });

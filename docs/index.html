@@ -399,8 +399,15 @@ footer a{text-decoration:none}footer a:hover{color:var(--ink)}
       <div class="pl">
         <h3>Mensal</h3><p class="sub">Pra começar sem compromisso</p>
         <p class="price">R$ 19,90<small>/mês</small></p>
-        <ul><li>Vídeos ilimitados</li><li>Todos os recursos</li><li>Atualizações automáticas</li><li>Suporte por mensagem</li><li>1 computador</li><li>Cancele quando quiser</li></ul>
+        <ul><li>Vídeos ilimitados</li><li>Todos os recursos</li><li>Atualizações automáticas</li><li>Suporte por mensagem</li><li>1 computador</li><li>Sem renovação automática</li></ul>
         <a class="btn btn-ghost" data-buy="mensal" href="#planos">Assinar mensal</a>
+      </div>
+      <div class="pl">
+        <h3>Trimestral</h3><p class="sub">3 meses pagando menos</p>
+        <p class="price">R$ 49,90<small>/3 meses</small></p>
+        <p class="save">Sai R$ 16,63 por mês · economize 16%</p>
+        <ul><li>Tudo do Mensal</li><li>90 dias de acesso</li><li>Atualizações automáticas</li><li>Suporte por mensagem</li><li>1 computador</li></ul>
+        <a class="btn btn-ghost" data-buy="trimestral" href="#planos">Assinar trimestral</a>
       </div>
       <div class="pl star">
         <span class="badge">Recomendado</span>
@@ -409,12 +416,6 @@ footer a{text-decoration:none}footer a:hover{color:var(--ink)}
         <p class="save">O preço de 7 meses do mensal, seu pra sempre</p>
         <ul><li>Tudo do Mensal</li><li>Sem mensalidade, nunca</li><li>Atualizações incluídas pra sempre</li><li><strong>Versões beta antes de todo mundo</strong></li><li><strong>Suporte prioritário no WhatsApp</strong></li><li><strong>Grupo VIP de clipadores</strong></li><li>1 computador</li></ul>
         <a class="btn btn-main" data-buy="vitalicio" href="#planos">Comprar vitalício</a>
-      </div>
-      <div class="pl">
-        <h3>Equipe</h3><p class="sub">Pra quem clipa em time</p>
-        <p class="price" style="font-size:34px">Sob consulta</p>
-        <ul><li>Tudo do Vitalício</li><li>Até 3 computadores</li><li>Atendimento dedicado pro seu time</li></ul>
-        <a class="btn btn-ghost" data-buy="equipe" href="#planos">Falar com a gente</a>
       </div>
     </div>
     <div class="guar">
@@ -499,9 +500,8 @@ footer a{text-decoration:none}footer a:hover{color:var(--ink)}
 {
 /* ===== Compra: Pix direto no site ou cartão pelo Mercado Pago ===== */
 const LOJA = "https://fcgtbdmpsqfusdmepvzh.supabase.co/functions/v1/loja";
-const LINK_EQUIPE = "";   /* WhatsApp ou e-mail para o plano Equipe (vazio = fica nos planos) */
 const testeCompra = new URLSearchParams(location.search).has("teste");
-const NOMES = {mensal: ["Plano Mensal", "R$ 19,90 · 30 dias"], vitalicio: ["Licença Vitalícia", "R$ 139,90 · pagamento único"]};
+const NOMES = {mensal: ["Plano Mensal", "R$ 19,90 · 30 dias"], trimestral: ["Plano Trimestral", "R$ 49,90 · 90 dias"], vitalicio: ["Licença Vitalícia", "R$ 139,90 · pagamento único"]};
 const mod = document.getElementById("mod"), $m = id => document.getElementById(id);
 let planoAtual = "", timer = null;
 const api = async corpo => {
@@ -523,10 +523,6 @@ document.addEventListener("keydown", e => { if (e.key === "Escape" && mod.classL
 mod.querySelectorAll("[data-volta]").forEach(b => b.addEventListener("click", () => { erro(""); passo("pEscolha"); }));
 document.querySelectorAll("[data-buy]").forEach(a => {
   const plano = a.dataset.buy;
-  if (plano === "equipe") {
-    if (LINK_EQUIPE) { a.href = LINK_EQUIPE; a.target = "_blank"; a.rel = "noopener"; }
-    return;
-  }
   a.addEventListener("click", e => { e.preventDefault(); abrir(plano); });
 });
 $m("oCartao").addEventListener("click", async () => {

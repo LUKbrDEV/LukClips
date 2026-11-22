@@ -393,7 +393,7 @@ footer a{text-decoration:none}footer a:hover{color:var(--ink)}
       <svg viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M32 4l22 8v18c0 14-9.5 25-22 30C19.5 55 10 44 10 30V12z" fill="#4ade801f" stroke="#4ade80" stroke-width="3"/><path d="M22 32l7 7 14-15" stroke="#4ade80" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>
       <div><h3>Garantia incondicional de 7 dias</h3><p>Compre, use à vontade, gere quantos cortes quiser. Se não gostar por qualquer motivo, devolvemos 100% do valor em até 7 dias. O risco é todo nosso.</p></div>
     </div>
-    <p class="pay">Pagamento por Pix ou cartão. Liberação após a confirmação.</p>
+    <p class="pay">Pagamento seguro pelo Mercado Pago, com Pix ou cartão. Seu serial aparece na hora, assim que o pagamento é aprovado.</p>
   </div>
 </section>
 
@@ -444,15 +444,35 @@ footer a{text-decoration:none}footer a:hover{color:var(--ink)}
 
 <script>
 {
-/* ===== Links de compra: troque pelos links do seu checkout (Mercado Pago, Kiwify, Hotmart, WhatsApp...) ===== */
-const LINKS = {
-  mensal: "",
-  vitalicio: "",
-  equipe: ""
-};
+/* ===== Compra: os botões abrem o pagamento do Mercado Pago (Pix ou cartão) ===== */
+const LOJA = "https://fcgtbdmpsqfusdmepvzh.supabase.co/functions/v1/loja";
+const LINK_EQUIPE = "";   /* WhatsApp ou e-mail para o plano Equipe (vazio = fica nos planos) */
+const testeCompra = new URLSearchParams(location.search).has("teste");
 document.querySelectorAll("[data-buy]").forEach(a => {
-  const u = LINKS[a.dataset.buy];
-  if (u) { a.href = u; a.target = "_blank"; a.rel = "noopener"; }
+  const plano = a.dataset.buy;
+  if (plano === "equipe") {
+    if (LINK_EQUIPE) { a.href = LINK_EQUIPE; a.target = "_blank"; a.rel = "noopener"; }
+    return;
+  }
+  const texto = a.textContent;
+  a.addEventListener("click", async e => {
+    e.preventDefault();
+    if (a.dataset.ocupado) return;
+    a.dataset.ocupado = "1";
+    a.textContent = "Abrindo pagamento...";
+    try {
+      const r = await fetch(LOJA, {method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({acao: "comprar", plano: testeCompra ? "teste" : plano})});
+      const d = await r.json();
+      if (!d.ok || !d.url) throw new Error(d.erro || "erro");
+      location.href = d.url;
+    } catch (err) {
+      a.textContent = "Tente de novo";
+      setTimeout(() => { a.textContent = texto; }, 2500);
+    } finally {
+      delete a.dataset.ocupado;
+    }
+  });
 });
 
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;

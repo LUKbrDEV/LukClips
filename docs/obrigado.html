@@ -59,6 +59,7 @@ footer{padding:20px;text-align:center;font-size:12px;color:#6f6a85}
       <h1>Pagamento aprovado! 🎉</h1>
       <p>Este é o seu serial do LukClips <strong id="plano"></strong>. Guarde em um lugar seguro: ele funciona em um computador.</p>
       <div class="serial"><code id="serial">LUK-</code><button class="btn" id="copiar" type="button">Copiar</button></div>
+      <p class="dica" id="emailInfo" hidden></p>
       <p class="dica">Dica: tire um print desta tela ou salve o link desta página.</p>
       <ol class="passos">
         <li>Baixe e instale o LukClips no seu PC com Windows 10 ou 11.</li>
@@ -102,6 +103,7 @@ async function conferir() {
     if (d.status === "aprovado" && d.serial) {
       $("serial").textContent = d.serial;
       $("plano").textContent = PLANOS[d.plano] || "";
+      if (d.email) { $("emailInfo").textContent = "📧 Também enviamos uma cópia para " + d.email + " (confira o spam)."; $("emailInfo").hidden = false; }
       mostrar("aprovado");
       return;
     }

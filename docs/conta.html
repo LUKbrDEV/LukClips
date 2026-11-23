@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#0c0b12">
+<title>LukClips — Minha conta</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23ec4899'/%3E%3Cstop offset='1' stop-color='%238b5cf6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)'/%3E%3Cpath d='M24 18l22 14-22 14z' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:dark;--bg:#0c0b12;--panel:#17161f;--line:#272535;--ink:#efeef6;--mute:#a7a4b8;--vio:#8b5cf6;--vio2:#a78bfa;--pink:#ec4899;--ok:#4ade80;--yel:#facc15}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 50% -10%,#8b5cf62e,transparent 60%),var(--bg);color:var(--ink);font:16px/1.6 Inter,system-ui,sans-serif;display:flex;flex-direction:column}
+a{color:inherit}
+header{padding:18px max(5vw,16px)}
+.logo{display:inline-flex;align-items:center;gap:10px;font:800 21px Archivo,sans-serif;text-decoration:none}
+.logo svg{width:32px;height:32px}
+main{flex:1;display:grid;place-items:center;padding:24px max(5vw,16px) 48px}
+.card{width:min(620px,100%);background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:clamp(24px,5vw,44px);box-shadow:0 40px 90px -40px #8b5cf6aa}
+h1{font:800 clamp(28px,4.4vw,38px)/1.1 Archivo,sans-serif;margin:0 0 10px;text-wrap:balance}
+p{margin:0;color:var(--mute)}
+.icone{width:56px;height:56px;border-radius:16px;display:grid;place-items:center;margin-bottom:20px;background:#8b5cf622}
+.icone.ok{background:#4ade8022}
+.spin{width:26px;height:26px;border-radius:50%;border:3px solid #8b5cf655;border-top-color:var(--vio2);animation:g 1s linear infinite}
+@keyframes g{to{transform:rotate(360deg)}}
+.serial{margin:26px 0 8px;display:flex;gap:10px;flex-wrap:wrap}
+.serial code{flex:1 1 300px;font:700 clamp(17px,2.6vw,22px)/1 Consolas,monospace;letter-spacing:.04em;background:#0f0e16;border:2px dashed #8b5cf688;border-radius:12px;padding:18px 16px;text-align:center;color:#fff;overflow-wrap:anywhere}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:52px;padding:0 22px;border-radius:12px;font:700 16px Archivo,sans-serif;text-decoration:none;border:1px solid var(--line);background:#1f1d2a;color:var(--ink);cursor:pointer}
+.btn:focus-visible{outline:3px solid var(--yel);outline-offset:3px}
+.btn-main{background:var(--vio);border-color:var(--vio);color:#fff}
+.dica{font-size:14px;color:var(--mute)}
+.passos{margin:28px 0 0;padding:0;list-style:none;display:grid;gap:12px;counter-reset:p}
+.passos li{display:flex;gap:14px;align-items:flex-start;color:var(--ink)}
+.passos li::before{counter-increment:p;content:counter(p);flex:none;width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:linear-gradient(135deg,var(--pink),var(--vio));font:800 14px Archivo,sans-serif;color:#fff}
+.acoes{display:flex;flex-wrap:wrap;gap:10px;margin-top:28px}
+.aviso{margin-top:24px;padding:14px 16px;border-radius:12px;background:#facc1514;border:1px solid #facc1544;color:#f5e6a8;font-size:14px}
+footer{padding:20px;text-align:center;font-size:12px;color:#6f6a85}
+[hidden]{display:none!important}
+@media(prefers-reduced-motion:reduce){.spin{animation:none}}
+.card{width:min(720px,100%)}
+main{place-items:start center}
+.topo{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+.topo h1{margin:0}
+.quem{margin-left:auto;display:flex;align-items:center;gap:10px;font-size:14px;color:var(--mute);overflow-wrap:anywhere}
+.lnk{background:none;border:0;color:var(--vio2);font:600 14px Inter,sans-serif;cursor:pointer;padding:6px 0}
+.cform .ctit{font:800 clamp(26px,4vw,34px)/1.1 Archivo,sans-serif;color:var(--ink);margin:0 0 8px}
+.cform .csub{color:var(--mute);margin:0}
+.cform label,.nova label{display:block;font-size:14px;color:var(--mute);margin:16px 0 0}
+.cform input,.nova input{display:block;width:100%;min-height:52px;margin-top:6px;border-radius:12px;border:1px solid var(--line);background:#0f0e16;color:var(--ink);font:16px Inter,sans-serif;padding:0 14px}
+.cform input:focus,.nova input:focus{outline:2px solid var(--vio);border-color:transparent}
+.cform .btn,.nova .btn{width:100%;margin-top:18px}
+.cerr{margin:12px 0 0;color:#fca5a5;font-size:14px}.cok{margin:12px 0 0;color:#86efac;font-size:14px}
+.clinks{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 12px;margin-top:8px}
+.clink{background:none;border:0;color:var(--vio2);font:600 14px Inter,sans-serif;cursor:pointer;padding:8px 0}
+.lista{display:grid;gap:14px;margin-top:24px}
+.compra{border:1px solid var(--line);border-radius:16px;padding:18px;background:#121119}
+.chead{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.chead strong{font:800 18px Archivo,sans-serif}
+.chead time{color:var(--mute);font-size:14px}
+.st{margin-left:auto;font:700 12px Inter,sans-serif;padding:5px 10px;border-radius:999px;white-space:nowrap}
+.st.aprovado{background:#4ade8022;color:var(--ok)}.st.aguardando{background:#facc1522;color:var(--yel)}.st.recusado,.st.expirado{background:#f8717122;color:#fca5a5}
+.compra .serial{margin:14px 0 0}
+.compra .serial code{font-size:clamp(15px,2.2vw,19px);padding:14px}
+.pend{margin-top:12px;color:var(--mute);font-size:14px}
+.cc{display:flex;gap:8px;margin-top:10px}
+.cc input{flex:1;min-height:46px;border-radius:10px;border:1px solid var(--line);background:#0f0e16;color:var(--mute);font:13px Consolas,monospace;padding:0 10px}
+.cc .btn{min-height:46px}
+.vazio{margin-top:24px;padding:22px;border:1px dashed var(--line);border-radius:16px;text-align:center;color:var(--mute)}
+.vazio .btn{margin-top:14px}
+.carr{display:flex;align-items:center;gap:12px;margin-top:24px;color:var(--mute)}
+.carr .spin{width:20px;height:20px}
+</style>
+</head>
+<body>
+<header>
+  <a class="logo" href="./"><svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ec4899"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs><rect width="64" height="64" rx="16" fill="url(#lg)"/><path d="M24 18l22 14-22 14z" fill="#fff"/></svg>LukClips</a>
+</header>
+<main>
+  <div class="card" aria-live="polite">
+    <section id="carregando"><div class="carr"><div class="spin"></div>Carregando...</div></section>
+
+    <section id="login" hidden></section>
+
+    <section id="nova" class="nova" hidden>
+      <h1>Crie uma senha nova</h1>
+      <p>Digite a senha que você quer usar daqui pra frente.</p>
+      <form id="fNova">
+        <label>Nova senha<input type="password" id="novaSenha" required minlength="6" autocomplete="new-password" placeholder="mínimo 6 caracteres"></label>
+        <button class="btn btn-main" type="submit">Salvar senha</button>
+        <p class="cerr" id="novaErr" hidden></p>
+      </form>
+    </section>
+
+    <section id="painel" hidden>
+      <div class="topo">
+        <h1>Minha conta</h1>
+        <div class="quem"><span id="email"></span><button class="lnk" id="sair" type="button">Sair</button></div>
+      </div>
+      <p>Aqui ficam todas as suas compras e os seriais do LukClips. Cada serial funciona em um computador.</p>
+      <div class="carr" id="listaCarr"><div class="spin"></div>Buscando suas compras...</div>
+      <div class="lista" id="lista"></div>
+      <div class="vazio" id="vazio" hidden>
+        Você ainda não tem compras nesta conta.<br>
+        <a class="btn btn-main" href="./#planos">Ver os planos</a>
+      </div>
+      <p class="cerr" id="listaErr" hidden></p>
+      <div class="acoes">
+        <a class="btn btn-main" id="baixar" href="download.html">⬇ Baixar o LukClips</a>
+        <a class="btn" href="suporte.html">Preciso de ajuda</a>
+      </div>
+    </section>
+  </div>
+</main>
+<footer>© 2026 LukClips · <a href="./" style="color:inherit">Site</a> · <a href="suporte.html" style="color:inherit">Suporte</a> · <a href="reembolso.html" style="color:inherit">Reembolso</a> · Feito por LukDev</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth.js"></script>
+<script>
+{
+const Conta = window.LukConta;
+const PLANOS = {mensal: "Plano Mensal (30 dias)", trimestral: "Plano Trimestral (90 dias)", vitalicio: "Licença Vitalícia", teste: "Compra de teste"};
+const STATUS = {aprovado: "Aprovado", aguardando: "Aguardando pagamento", recusado: "Recusado", expirado: "Expirado"};
+const $ = id => document.getElementById(id);
+const mostrar = id => ["carregando", "login", "nova", "painel"].forEach(s => { $(s).hidden = s !== id; });
+const esc = t => String(t ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+const data = d => { const x = new Date(d); return isNaN(x) ? "" : x.toLocaleDateString("pt-BR", {day: "2-digit", month: "short", year: "numeric"}) + " às " + x.toLocaleTimeString("pt-BR", {hour: "2-digit", minute: "2-digit"}); };
+let timer = null, recuperando = false;
+
+Conta.montarForm($("login"), {
+  tituloCriar: "Crie sua conta", subCriar: "Com a conta você vê seus seriais e o histórico de compras quando quiser.",
+  modo: "entrar", aoEntrar: s => abrirPainel(s)
+});
+
+const render = compras => {
+  $("lista").innerHTML = compras.map(c => {
+    const st = c.status in STATUS ? c.status : "aguardando";
+    let corpo = "";
+    if (st === "aprovado" && c.serial) corpo = `<div class="serial"><code>${esc(c.serial)}</code><button class="btn" type="button" data-copiar="${esc(c.serial)}">Copiar</button></div>`;
+    else if (st === "aguardando") corpo = c.copia_e_cola
+      ? `<p class="pend">Pague com o Pix copia e cola abaixo no app do seu banco. O serial aparece aqui sozinho depois do pagamento.</p>
+         <div class="cc"><input readonly value="${esc(c.copia_e_cola)}" aria-label="Pix copia e cola"><button class="btn btn-main" type="button" data-copiar="${esc(c.copia_e_cola)}">Copiar Pix</button></div>`
+      : `<p class="pend">Esperando a confirmação do pagamento. Esta página atualiza sozinha.</p>`;
+    else if (st === "recusado") corpo = `<p class="pend">O pagamento não foi aprovado e nada foi cobrado.</p>`;
+    return `<article class="compra"><div class="chead"><strong>${esc(PLANOS[c.plano] || c.plano || "LukClips")}</strong><time>${esc(data(c.criado_em))}</time><span class="st ${st}">${STATUS[st]}</span></div>${corpo}</article>`;
+  }).join("");
+  $("vazio").hidden = compras.length > 0;
+};
+
+const carregar = async () => {
+  clearTimeout(timer);
+  try {
+    const d = await Conta.api({acao: "minhas_compras"});
+    if (d.erro === "login") { await Conta.sair(); return mostrar("login"); }
+    if (!d.ok) throw new Error(d.erro || "Não deu para buscar suas compras.");
+    $("listaErr").hidden = true;
+    render(d.compras || []);
+    if ((d.compras || []).some(c => c.status === "aguardando")) timer = setTimeout(carregar, 6000);
+  } catch (e) {
+    $("listaErr").textContent = Conta.traduz(e.message) + " Recarregue a página em instantes.";
+    $("listaErr").hidden = false;
+  } finally { $("listaCarr").hidden = true; }
+};
+
+const abrirPainel = s => { $("email").textContent = s.user.email; mostrar("painel"); $("listaCarr").hidden = false; carregar(); };
+
+$("lista").addEventListener("click", async e => {
+  const b = e.target.closest("[data-copiar]"); if (!b) return;
+  const t = b.textContent;
+  try { await navigator.clipboard.writeText(b.dataset.copiar); b.textContent = "Copiado ✓"; }
+  catch (err) { b.textContent = "Selecione e copie"; }
+  setTimeout(() => { b.textContent = t; }, 2000);
+});
+$("sair").addEventListener("click", async () => { clearTimeout(timer); await Conta.sair(); mostrar("login"); });
+
+/* link de "esqueci minha senha" do e-mail */
+Conta.sb.auth.onAuthStateChange((ev) => { if (ev === "PASSWORD_RECOVERY") { recuperando = true; mostrar("nova"); } });
+$("fNova").addEventListener("submit", async e => {
+  e.preventDefault();
+  const senha = $("novaSenha").value;
+  if (senha.length < 6) { $("novaErr").textContent = "A senha precisa ter pelo menos 6 caracteres."; $("novaErr").hidden = false; return; }
+  const {error} = await Conta.sb.auth.updateUser({password: senha});
+  if (error) { $("novaErr").textContent = Conta.traduz(error.message); $("novaErr").hidden = false; return; }
+  recuperando = false;
+  abrirPainel(await Conta.sessao());
+});
+
+/* botão de download: instalador mais novo */
+fetch("https://api.github.com/repos/LUKbrDEV/LukClips/releases/latest")
+  .then(r => r.ok ? r.json() : Promise.reject())
+  .then(rel => {
+    const exe = (rel.assets || []).find(a => /\.exe$/i.test(a.name));
+    if (exe) { $("baixar").href = exe.browser_download_url; $("baixar").textContent = "⬇ Baixar o LukClips " + rel.tag_name; }
+  })
+  .catch(() => {});
+
+(async () => {
+  const s = await Conta.sessao();
+  if (recuperando || /type=recovery/.test(location.hash)) return mostrar("nova");
+  if (s) abrirPainel(s); else mostrar("login");
+})();
+}
+</script>
+</body>
+</html>

@@ -230,6 +230,21 @@ footer a{text-decoration:none}footer a:hover{color:var(--ink)}
 @keyframes gira{to{transform:rotate(360deg)}}
 .merr{margin-top:12px;color:#fca5a5;font-size:14px}
 .mlegal{margin:16px 0 0;font-size:12.5px;color:var(--mute);line-height:1.5}.mlegal a{color:var(--vio2)}
+/* conta */
+.cform .ctit{font:800 19px Archivo,sans-serif;color:var(--ink);margin:18px 0 2px}
+.cform .csub{color:var(--mute);font-size:14.5px;margin:0}
+.cform label{display:block;font-size:14px;color:var(--mute);margin:14px 0 0}
+.cform input{display:block;width:100%;min-height:50px;margin-top:6px;border-radius:12px;border:1px solid var(--line);background:#0f0e16;color:var(--ink);font:16px Inter,sans-serif;padding:0 14px}
+.cform input:focus{outline:2px solid var(--vio);border-color:transparent}
+.cform .btn{width:100%;margin-top:16px}
+.cerr{margin:12px 0 0;color:#fca5a5;font-size:14px}.cok{margin:12px 0 0;color:#86efac;font-size:14px}
+.clinks{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 12px;margin-top:6px}
+.clink{background:none;border:0;color:var(--vio2);font:600 14px Inter,sans-serif;cursor:pointer;padding:8px 0}
+.quem{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:14px;padding:10px 12px;border-radius:12px;background:#0f0e16;border:1px solid var(--line);font-size:14px;color:var(--mute)}
+.quem b{color:var(--ink);font-weight:600;overflow-wrap:anywhere}
+.quem button{margin-left:auto;background:none;border:0;color:var(--vio2);font:600 14px Inter,sans-serif;cursor:pointer;padding:4px 0}
+.salvo{margin-top:14px;padding:12px 14px;border-radius:12px;background:#4ade8012;border:1px solid #4ade8040;color:#bbf7d0;font-size:14px;line-height:1.5}
+.salvo a{color:#fff}
 .mvolta{background:none;border:0;color:var(--vio2);font:600 14px Inter,sans-serif;cursor:pointer;margin-top:14px;padding:8px 0}
 @media(prefers-reduced-motion:reduce){.esp i{animation:none}}
 /* lightbox */
@@ -254,6 +269,7 @@ footer a{text-decoration:none}footer a:hover{color:var(--ink)}
       <a href="#planos">Planos</a>
       <a href="#duvidas">Dúvidas</a>
       <a href="download.html">Download</a>
+      <a href="conta.html">Minha conta</a>
     </div>
     <a class="btn btn-main" href="#planos">Quero o LukClips</a>
   </div>
@@ -484,7 +500,7 @@ footer a{text-decoration:none}footer a:hover{color:var(--ink)}
 <footer>
   <div class="wrap">
     <span>© 2026 LukClips</span>
-    <a href="download.html">Download</a><a href="termos.html">Termos de uso</a><a href="privacidade.html">Privacidade</a><a href="reembolso.html">Reembolso</a><a href="suporte.html">Suporte</a>
+    <a href="download.html">Download</a><a href="termos.html">Termos de uso</a><a href="privacidade.html">Privacidade</a><a href="reembolso.html">Reembolso</a><a href="suporte.html">Suporte</a><a href="conta.html">Minha conta</a>
     <span class="by">Feito por LukDev</span>
   </div>
 </footer>
@@ -494,20 +510,17 @@ footer a{text-decoration:none}footer a:hover{color:var(--ink)}
     <button class="mx" id="mFechar" type="button" aria-label="Fechar">×</button>
     <h3 id="mTit">LukClips</h3>
     <p class="msub" id="mPreco"></p>
+    <div id="pConta" hidden></div>
     <div id="pEscolha">
+      <div class="quem">Comprando como <b id="mQuem"></b><button type="button" id="mSair">Trocar conta</button></div>
       <button class="opt" id="oPix" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2"><path d="M12 2l5 5-5 5-5-5zM12 12l5 5-5 5-5-5zM2 12l5-5 5 5-5 5zM12 12l5-5 5 5-5 5z"/></svg><span>Pix<small>Aprovação na hora, serial em segundos</small></span><span class="tagp">Recomendado</span></button>
       <button class="opt" id="oCartao" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg><span>Cartão de crédito<small>Pagamento seguro pelo Mercado Pago</small></span></button>
     </div>
-    <form id="pEmail" hidden>
-      <label for="mEmail">Seu e-mail (para o comprovante)</label>
-      <input type="email" id="mEmail" required autocomplete="email" placeholder="voce@email.com">
-      <button class="btn btn-main" type="submit" id="mGerar">Gerar Pix</button>
-      <button class="mvolta" type="button" data-volta>← Escolher outra forma</button>
-    </form>
     <div id="pQr" hidden>
       <div class="qr"><img id="mQr" alt="QR Code do Pix"></div>
       <div class="cc"><input id="mCc" readonly aria-label="Código Pix copia e cola"><button id="mCopiar" type="button">Copiar</button></div>
       <p class="esp"><i></i><span>Aguardando o pagamento... pague pelo app do seu banco. Esta janela avança sozinha.</span></p>
+      <p class="salvo">✅ Pode fechar sem medo: este Pix e o seu serial ficam salvos em <a href="conta.html" target="_blank">Minha conta</a>.</p>
     </div>
     <p class="merr" id="mErr" hidden></p>
     <p class="mlegal">Ao comprar, você concorda com os <a href="termos.html" target="_blank">Termos de uso</a> e a <a href="privacidade.html" target="_blank">Política de privacidade</a>. Garantia de 7 dias: <a href="reembolso.html" target="_blank">reembolso</a>.</p>
@@ -517,52 +530,63 @@ footer a{text-decoration:none}footer a:hover{color:var(--ink)}
 
 <div class="lb" id="lb" role="dialog" aria-label="Imagem ampliada"><img id="lbImg" alt=""></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth.js"></script>
 <script>
 {
-/* ===== Compra: Pix direto no site ou cartão pelo Mercado Pago ===== */
-const LOJA = "https://fcgtbdmpsqfusdmepvzh.supabase.co/functions/v1/loja";
+/* ===== Compra: conta rápida + Pix direto no site ou cartão pelo Mercado Pago ===== */
 const testeCompra = new URLSearchParams(location.search).has("teste");
 const NOMES = {mensal: ["Plano Mensal", "R$ 19,90 · 30 dias"], trimestral: ["Plano Trimestral", "R$ 49,90 · 90 dias"], vitalicio: ["Licença Vitalícia", "R$ 139,90 · pagamento único"]};
 const mod = document.getElementById("mod"), $m = id => document.getElementById(id);
+const Conta = window.LukConta;
 let planoAtual = "", timer = null;
-const api = async corpo => {
-  const r = await fetch(LOJA, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(corpo)});
-  return r.json();
-};
-const passo = id => ["pEscolha", "pEmail", "pQr"].forEach(x => { $m(x).hidden = x !== id; });
+const api = corpo => Conta.api(corpo);
+const passo = id => ["pConta", "pEscolha", "pQr"].forEach(x => { $m(x).hidden = x !== id; });
 const erro = t => { $m("mErr").textContent = t || ""; $m("mErr").hidden = !t; };
-const abrir = plano => {
+const formConta = Conta.montarForm($m("pConta"), {
+  subCriar: "Leva 10 segundos. Seu serial e o histórico de compras ficam salvos nela: se fechar a página, é só entrar de novo.",
+  botaoCriar: "Criar conta e continuar", botaoEntrar: "Entrar e continuar",
+  aoEntrar: s => irPagamento(s)
+});
+const irPagamento = s => { $m("mQuem").textContent = s.user.email; erro(""); passo("pEscolha"); };
+const abrir = async plano => {
   planoAtual = testeCompra ? "teste" : plano;
   $m("mTit").textContent = "LukClips · " + NOMES[plano][0];
   $m("mPreco").textContent = testeCompra ? "Compra de TESTE · R$ 1,00" : NOMES[plano][1];
-  erro(""); passo("pEscolha"); mod.classList.add("open");
+  erro(""); mod.classList.add("open");
+  const s = await Conta.sessao();
+  if (s) irPagamento(s); else { passo("pConta"); setTimeout(formConta.focar, 50); }
 };
 const fechar = () => { mod.classList.remove("open"); clearTimeout(timer); };
 $m("mFechar").addEventListener("click", fechar);
 mod.addEventListener("click", e => { if (e.target === mod) fechar(); });
 document.addEventListener("keydown", e => { if (e.key === "Escape" && mod.classList.contains("open")) fechar(); });
-mod.querySelectorAll("[data-volta]").forEach(b => b.addEventListener("click", () => { erro(""); passo("pEscolha"); }));
+$m("mSair").addEventListener("click", async () => { await Conta.sair(); passo("pConta"); setTimeout(formConta.focar, 50); });
 document.querySelectorAll("[data-buy]").forEach(a => {
   const plano = a.dataset.buy;
   a.addEventListener("click", e => { e.preventDefault(); abrir(plano); });
 });
+const semLogin = d => d && d.erro === "login" && (passo("pConta"), erro("Sua sessão expirou. Entre de novo para continuar."), true);
 $m("oCartao").addEventListener("click", async () => {
   const b = $m("oCartao"); if (b.disabled) return;
   b.disabled = true; erro("");
   try {
     const d = await api({acao: "comprar", plano: planoAtual});
+    if (semLogin(d)) return;
     if (!d.ok || !d.url) throw new Error(d.erro || "Não deu para abrir o pagamento.");
     location.href = d.url;
   } catch (err) { erro(err.message || "Não deu para abrir o pagamento. Tente de novo."); }
   finally { b.disabled = false; }
 });
-$m("oPix").addEventListener("click", () => { erro(""); passo("pEmail"); setTimeout(() => $m("mEmail").focus(), 50); });
-$m("pEmail").addEventListener("submit", async e => {
-  e.preventDefault();
-  const b = $m("mGerar"); if (b.disabled) return;
-  b.disabled = true; b.textContent = "Gerando Pix..."; erro("");
+$m("oPix").addEventListener("click", async () => {
+  const b = $m("oPix"); if (b.disabled) return;
+  b.disabled = true; erro("");
+  const span = b.querySelector("small"), txt = span.textContent; span.textContent = "Gerando o Pix...";
   try {
-    const d = await api({acao: "pix", plano: planoAtual, email: $m("mEmail").value});
+    const s = await Conta.sessao();
+    if (!s) { passo("pConta"); return; }
+    const d = await api({acao: "pix", plano: planoAtual, email: s.user.email});
+    if (semLogin(d)) return;
     if (!d.ok) throw new Error(d.erro || "Não deu para gerar o Pix.");
     $m("mCc").value = d.copia_e_cola;
     if (d.qr_base64) $m("mQr").src = "data:image/png;base64," + d.qr_base64;
@@ -578,7 +602,7 @@ $m("pEmail").addEventListener("submit", async e => {
     };
     timer = setTimeout(conferir, 4000);
   } catch (err) { erro(err.message); }
-  finally { b.disabled = false; b.textContent = "Gerar Pix"; }
+  finally { b.disabled = false; span.textContent = txt; }
 });
 $m("mCopiar").addEventListener("click", async () => {
   try { await navigator.clipboard.writeText($m("mCc").value); $m("mCopiar").textContent = "Copiado ✓"; }

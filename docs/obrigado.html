@@ -63,7 +63,7 @@ footer{padding:20px;text-align:center;font-size:12px;color:#6f6a85}
       <p>Este é o seu serial do LukClips <strong id="plano"></strong>. Guarde em um lugar seguro: ele funciona em um computador.</p>
       <div class="serial"><code id="serial">LUK-</code><button class="btn" id="copiar" type="button">Copiar</button></div>
       <p class="dica" id="emailInfo" hidden></p>
-      <p class="dica">Dica: tire um print desta tela ou salve o link desta página.</p>
+      <p class="dica">Este serial também fica salvo em <a href="conta.html" style="color:var(--vio2)">Minha conta</a>: se fechar a página, é só entrar lá com seu e-mail e senha.</p>
       <ol class="passos">
         <li>Baixe e instale o LukClips no seu PC com Windows 10 ou 11.</li>
         <li>Abra o programa: a tela de ativação aparece sozinha.</li>
@@ -71,7 +71,7 @@ footer{padding:20px;text-align:center;font-size:12px;color:#6f6a85}
       </ol>
       <div class="acoes">
         <a class="btn btn-main" id="baixar" href="download.html">⬇ Baixar o LukClips</a>
-        <a class="btn" href="./">Voltar ao site</a>
+        <a class="btn" href="conta.html">Minha conta</a>
       </div>
     </section>
     <!-- problema -->
@@ -119,7 +119,7 @@ async function conferir() {
   } catch (e) { /* sem internet: tenta de novo */ }
   if (tentativas < 150) setTimeout(conferir, tentativas < 20 ? 3000 : 8000);
   else problema("Ainda não recebemos a confirmação",
-    "Se você já pagou, recarregue esta página em alguns minutos. Seu pedido fica salvo neste link.");
+    "Se você já pagou, o serial aparece em Minha conta assim que o pagamento for confirmado.");
 }
 
 $("copiar").addEventListener("click", async () => {

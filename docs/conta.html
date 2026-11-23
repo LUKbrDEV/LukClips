@@ -42,7 +42,6 @@ p{margin:0;color:var(--mute)}
 footer{padding:20px;text-align:center;font-size:12px;color:#6f6a85}
 [hidden]{display:none!important}
 @media(prefers-reduced-motion:reduce){.spin{animation:none}}
-.card{width:min(720px,100%)}
 main{place-items:start center}
 .topo{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px}
 .topo h1{margin:0}
@@ -72,8 +71,55 @@ main{place-items:start center}
 .cc .btn{min-height:46px}
 .vazio{margin-top:24px;padding:22px;border:1px dashed var(--line);border-radius:16px;text-align:center;color:var(--mute)}
 .vazio .btn{margin-top:14px}
+.antigas{margin-top:20px;padding:18px;border-radius:16px;background:#8b5cf614;border:1px solid #8b5cf655}
+.antigas strong{display:block;font:800 17px Archivo,sans-serif;color:var(--ink);margin-bottom:4px}
+.antigas p{font-size:14.5px}
+.antigas .btn{margin-top:14px}
 .carr{display:flex;align-items:center;gap:12px;margin-top:24px;color:var(--mute)}
 .carr .spin{width:20px;height:20px}
+.card{width:min(860px,100%)}
+#login,#nova{max-width:480px;margin:0 auto}
+.resumo{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-top:22px}
+.tile{border:1px solid var(--line);border-radius:16px;padding:16px;background:#121119}
+.tile small{display:block;color:var(--mute);font-size:13px}
+.tile b{display:block;font:800 22px/1.2 Archivo,sans-serif;color:var(--ink);margin-top:4px;overflow-wrap:anywhere}
+.tile span{display:block;font-size:13px;color:var(--mute);margin-top:2px}
+.tile.dest{background:linear-gradient(135deg,#ec489922,#8b5cf622);border-color:#8b5cf655}
+.abas{display:flex;gap:6px;margin-top:26px;border-bottom:1px solid var(--line);overflow-x:auto}
+.aba{background:none;border:0;border-bottom:2px solid transparent;color:var(--mute);font:700 15px Inter,sans-serif;padding:12px 14px;cursor:pointer;white-space:nowrap;margin-bottom:-1px}
+.aba[aria-selected=true]{color:var(--ink);border-bottom-color:var(--vio)}
+.aba i{font-style:normal;font-size:12px;background:#24222f;border-radius:999px;padding:2px 8px;margin-left:6px;color:var(--mute)}
+.info{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px 16px;margin-top:14px}
+.info div{font-size:14px;color:var(--ink)}
+.info small{display:block;color:var(--mute);font-size:12.5px}
+.st.vence{background:#facc1522;color:var(--yel)}.st.vencida,.st.bloqueada{background:#f8717122;color:#fca5a5}.st.ativa{background:#4ade8022;color:var(--ok)}
+.renovar{margin-top:12px}
+.ativar{margin-top:26px;padding:20px;border-radius:16px;background:#121119;border:1px solid var(--line)}
+.ativar h2,.planos h2,.secao h2{font:800 18px Archivo,sans-serif;margin:0 0 4px}
+.ativar .passos{margin-top:14px}
+.planos{margin-top:22px}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:14px}
+.pl{border:1px solid var(--line);border-radius:16px;padding:18px;background:#121119;display:flex;flex-direction:column}
+.pl.top{border-color:var(--vio);background:linear-gradient(180deg,#8b5cf61f,#121119)}
+.pl strong{font:800 17px Archivo,sans-serif}
+.pl .preco{font:800 26px Archivo,sans-serif;margin:6px 0 2px}
+.pl small{color:var(--mute);font-size:13.5px;flex:1}
+.pl .btn{margin-top:14px;min-height:46px}
+.hist{margin-top:20px;display:grid;gap:8px}
+.lin{display:grid;grid-template-columns:1.3fr 1.4fr .9fr .8fr auto;gap:12px;align-items:center;padding:14px 16px;border:1px solid var(--line);border-radius:14px;background:#121119;font-size:14.5px}
+.lin time{color:var(--mute)}
+.lin .st{margin-left:0}
+.lin.cab{background:none;border:0;padding:0 16px;color:var(--mute);font-size:12.5px;text-transform:uppercase;letter-spacing:.04em}
+@media(max-width:640px){.resumo{grid-template-columns:1fr 1fr}.resumo .tile.dest{grid-column:1/-1}.tile{padding:13px}.tile b{font-size:19px}.lin .st{justify-self:start}.lin{grid-template-columns:1fr auto}.lin.cab{display:none}.lin .plano{grid-column:1/-1;font-weight:600;order:-1}.lin time{grid-column:1/-1}}
+.secao{margin-top:24px;padding:20px;border-radius:16px;background:#121119;border:1px solid var(--line)}
+.secao .info{margin-top:10px}
+.secao label{display:block;font-size:14px;color:var(--mute);margin:14px 0 0}
+.secao input{display:block;width:100%;min-height:50px;margin-top:6px;border-radius:12px;border:1px solid var(--line);background:#0f0e16;color:var(--ink);font:16px Inter,sans-serif;padding:0 14px}
+.secao input:focus{outline:2px solid var(--vio);border-color:transparent}
+.secao form .btn{margin-top:16px}
+.links{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.links a{font-size:14px;padding:8px 12px;border-radius:10px;background:#1f1d2a;border:1px solid var(--line);text-decoration:none}
+.links a:hover{border-color:var(--vio)}
 </style>
 </head>
 <body>
@@ -101,17 +147,94 @@ main{place-items:start center}
         <h1>Minha conta</h1>
         <div class="quem"><span id="email"></span><button class="lnk" id="sair" type="button">Sair</button></div>
       </div>
-      <p>Aqui ficam todas as suas compras e os seriais do LukClips. Cada serial funciona em um computador.</p>
-      <div class="carr" id="listaCarr"><div class="spin"></div>Buscando suas compras...</div>
-      <div class="lista" id="lista"></div>
-      <div class="vazio" id="vazio" hidden>
-        Você ainda não tem compras nesta conta.<br>
-        <a class="btn btn-main" href="./#planos">Ver os planos</a>
+      <p>Seus seriais, suas compras e os dados da sua conta, tudo num lugar só.</p>
+
+      <div class="resumo">
+        <div class="tile dest"><small>Licenças ativas</small><b id="tAtivas">–</b><span id="tAtivasSub">&nbsp;</span></div>
+        <div class="tile"><small>Seu plano</small><b id="tPlano">–</b><span id="tPlanoSub">&nbsp;</span></div>
+        <div class="tile"><small>Cliente desde</small><b id="tDesde">–</b><span id="tCompras">&nbsp;</span></div>
       </div>
+
+      <div class="antigas" id="antigas" hidden>
+        <strong id="antTit">Encontramos compras antigas com este e-mail</strong>
+        <p>Elas foram feitas antes de existir a conta. Para trazer para cá, confirme que o e-mail é seu: enviamos um link, você clica nele e elas aparecem nesta página.</p>
+        <button class="btn btn-main" id="antBtn" type="button">Enviar link para meu e-mail</button>
+        <p class="cok" id="antOk" hidden></p><p class="cerr" id="antErr" hidden></p>
+      </div>
+
+      <div class="abas" role="tablist">
+        <button class="aba" role="tab" aria-selected="true" data-aba="licencas">Licenças<i id="nLic">0</i></button>
+        <button class="aba" role="tab" aria-selected="false" data-aba="compras">Compras<i id="nCom">0</i></button>
+        <button class="aba" role="tab" aria-selected="false" data-aba="conta">Conta</button>
+      </div>
+
+      <div class="carr" id="listaCarr"><div class="spin"></div>Buscando suas compras...</div>
       <p class="cerr" id="listaErr" hidden></p>
-      <div class="acoes">
-        <a class="btn btn-main" id="baixar" href="download.html">⬇ Baixar o LukClips</a>
-        <a class="btn" href="suporte.html">Preciso de ajuda</a>
+
+      <!-- Licenças -->
+      <div data-painel="licencas">
+        <div class="lista" id="lista"></div>
+        <div id="vazio" hidden>
+          <div class="vazio">Você ainda não tem licenças nesta conta. Escolha um plano: o serial aparece aqui assim que o pagamento é aprovado.</div>
+          <div class="planos">
+            <div class="pgrid">
+              <div class="pl"><strong>Mensal</strong><div class="preco">R$ 19,90</div><small>30 dias, todos os recursos liberados.</small><a class="btn" href="./#comprar-mensal">Assinar mensal</a></div>
+              <div class="pl"><strong>Trimestral</strong><div class="preco">R$ 49,90</div><small>90 dias, sai mais barato que o mensal.</small><a class="btn" href="./#comprar-trimestral">Assinar trimestral</a></div>
+              <div class="pl top"><strong>Vitalício</strong><div class="preco">R$ 139,90</div><small>Pague uma vez e use para sempre, com versões beta antes e suporte prioritário.</small><a class="btn btn-main" href="./#comprar-vitalicio">Comprar vitalício</a></div>
+            </div>
+          </div>
+        </div>
+        <div class="ativar">
+          <h2>Como ativar o LukClips</h2>
+          <p>Cada serial funciona em um computador com Windows 10 ou 11.</p>
+          <ol class="passos">
+            <li>Baixe e instale o LukClips.</li>
+            <li>Abra o programa: a tela de ativação aparece sozinha.</li>
+            <li>Copie o serial aqui de cima, cole no programa e clique em Ativar.</li>
+          </ol>
+          <div class="acoes">
+            <a class="btn btn-main" id="baixar" href="download.html">⬇ Baixar o LukClips</a>
+            <a class="btn" href="suporte.html">Preciso de ajuda</a>
+          </div>
+          <p class="dica" style="margin-top:14px">Formatou o PC ou vai trocar de computador? Fale com o <a href="suporte.html" style="color:var(--vio2)">suporte</a> que liberamos o serial para a máquina nova.</p>
+        </div>
+      </div>
+
+      <!-- Compras -->
+      <div data-painel="compras" hidden>
+        <div class="hist" id="hist"></div>
+        <div class="vazio" id="histVazio" hidden>Nenhuma compra por aqui ainda.<br><a class="btn btn-main" href="./#planos">Ver os planos</a></div>
+        <p class="dica" style="margin-top:16px">Garantia de 7 dias: se não gostar, devolvemos seu dinheiro. Veja a <a href="reembolso.html" style="color:var(--vio2)">política de reembolso</a>.</p>
+      </div>
+
+      <!-- Conta -->
+      <div data-painel="conta" hidden>
+        <div class="secao">
+          <h2>Seus dados</h2>
+          <div class="info">
+            <div><small>E-mail</small><span id="cEmail"></span></div>
+            <div><small>Conta criada em</small><span id="cDesde"></span></div>
+            <div><small>Último acesso</small><span id="cAcesso"></span></div>
+          </div>
+        </div>
+        <div class="secao">
+          <h2>Trocar senha</h2>
+          <form id="fSenha" style="max-width:420px">
+            <label>Nova senha<input type="password" id="s1" minlength="6" autocomplete="new-password" placeholder="mínimo 6 caracteres"></label>
+            <label>Repita a nova senha<input type="password" id="s2" minlength="6" autocomplete="new-password"></label>
+            <button class="btn btn-main" type="submit">Salvar nova senha</button>
+            <p class="cok" id="sOk" hidden></p><p class="cerr" id="sErr" hidden></p>
+          </form>
+        </div>
+        <div class="secao">
+          <h2>Ajuda e documentos</h2>
+          <div class="links">
+            <a href="suporte.html">Suporte</a><a href="mailto:mukiofertas@gmail.com">mukiofertas@gmail.com</a>
+            <a href="reembolso.html">Reembolso</a><a href="termos.html">Termos de uso</a><a href="privacidade.html">Privacidade</a>
+          </div>
+          <p class="dica" style="margin-top:14px">Quer apagar sua conta e seus dados? Escreva para o e-mail do suporte usando o e-mail desta conta.</p>
+        </div>
+        <div class="acoes"><button class="btn" id="sair2" type="button">Sair da conta</button></div>
       </div>
     </section>
   </div>
@@ -123,32 +246,91 @@ main{place-items:start center}
 <script>
 {
 const Conta = window.LukConta;
-const PLANOS = {mensal: "Plano Mensal (30 dias)", trimestral: "Plano Trimestral (90 dias)", vitalicio: "Licença Vitalícia", teste: "Compra de teste"};
-const STATUS = {aprovado: "Aprovado", aguardando: "Aguardando pagamento", recusado: "Recusado", expirado: "Expirado"};
+const PLANOS = {mensal: "Plano Mensal", trimestral: "Plano Trimestral", vitalicio: "Licença Vitalícia", teste: "Compra de teste"};
+const RANK = {vitalicio: 3, trimestral: 2, mensal: 1, teste: 0};
+const STATUS = {aprovado: "Aprovado", aguardando: "Aguardando pagamento", recusado: "Recusado", expirado: "Pix expirado"};
+const DIA = 86400000;
 const $ = id => document.getElementById(id);
 const mostrar = id => ["carregando", "login", "nova", "painel"].forEach(s => { $(s).hidden = s !== id; });
 const esc = t => String(t ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
-const data = d => { const x = new Date(d); return isNaN(x) ? "" : x.toLocaleDateString("pt-BR", {day: "2-digit", month: "short", year: "numeric"}) + " às " + x.toLocaleTimeString("pt-BR", {hour: "2-digit", minute: "2-digit"}); };
-let timer = null, recuperando = false;
+const dataC = d => { const x = new Date(d); return d && !isNaN(x) ? x.toLocaleDateString("pt-BR", {day: "2-digit", month: "short", year: "numeric"}) : "–"; };
+const dataH = d => { const x = new Date(d); return d && !isNaN(x) ? dataC(d) + " às " + x.toLocaleTimeString("pt-BR", {hour: "2-digit", minute: "2-digit"}) : "–"; };
+const reais = v => typeof v === "number" && !isNaN(v) ? v.toLocaleString("pt-BR", {style: "currency", currency: "BRL"}) : "–";
+let timer = null, recuperando = false, sessaoAtual = null;
 
 Conta.montarForm($("login"), {
   tituloCriar: "Crie sua conta", subCriar: "Com a conta você vê seus seriais e o histórico de compras quando quiser.",
   modo: "entrar", aoEntrar: s => abrirPainel(s)
 });
 
-const render = compras => {
-  $("lista").innerHTML = compras.map(c => {
-    const st = c.status in STATUS ? c.status : "aguardando";
-    let corpo = "";
-    if (st === "aprovado" && c.serial) corpo = `<div class="serial"><code>${esc(c.serial)}</code><button class="btn" type="button" data-copiar="${esc(c.serial)}">Copiar</button></div>`;
-    else if (st === "aguardando") corpo = c.copia_e_cola
-      ? `<p class="pend">Pague com o Pix copia e cola abaixo no app do seu banco. O serial aparece aqui sozinho depois do pagamento.</p>
+/* situação da licença de uma compra aprovada */
+const estadoLic = c => {
+  const l = c.licenca || {};
+  if (l.status === "bloqueada") return {cls: "bloqueada", txt: "Bloqueada", ativa: false};
+  if (l.expira_em) {
+    const dias = Math.ceil((new Date(l.expira_em) - Date.now()) / DIA);
+    if (dias <= 0) return {cls: "vencida", txt: "Vencida", ativa: false, renovar: true};
+    if (dias <= 7) return {cls: "vence", txt: dias === 1 ? "Vence amanhã" : "Vence em " + dias + " dias", ativa: true, renovar: true};
+    return {cls: "ativa", txt: "Ativa", ativa: true};
+  }
+  return {cls: "ativa", txt: "Ativa", ativa: true};
+};
+
+const cardLicenca = c => {
+  const e = estadoLic(c), l = c.licenca;
+  const validade = l ? (l.expira_em ? dataC(l.expira_em) : "Para sempre") : (c.plano === "vitalicio" ? "Para sempre" : "–");
+  const pc = l ? (l.ativada ? "Ativada" + (l.ativada_em ? " em " + dataC(l.ativada_em) : "") : "Ainda não ativada") : "–";
+  return `<article class="compra">
+    <div class="chead"><strong>${esc(PLANOS[c.plano] || c.plano)}</strong><span class="st ${e.cls}">${e.txt}</span></div>
+    <div class="info">
+      <div><small>Comprada em</small>${esc(dataC(c.pago_em || c.criado_em))}</div>
+      <div><small>Válida até</small>${esc(validade)}</div>
+      <div><small>Computador</small>${esc(pc)}</div>
+    </div>
+    <div class="serial"><code>${esc(c.serial)}</code><button class="btn" type="button" data-copiar="${esc(c.serial)}">Copiar</button></div>
+    ${e.renovar ? `<a class="btn btn-main renovar" href="./#comprar-${c.plano === "trimestral" ? "trimestral" : "mensal"}">Renovar agora</a>` : ""}
+  </article>`;
+};
+
+const cardPendente = c => `<article class="compra">
+    <div class="chead"><strong>${esc(PLANOS[c.plano] || c.plano)}</strong><time>${esc(dataH(c.criado_em))}</time><span class="st aguardando">Aguardando pagamento</span></div>
+    ${c.copia_e_cola
+      ? `<p class="pend">Pague com o Pix copia e cola no app do seu banco. O serial aparece aqui sozinho depois do pagamento.</p>
          <div class="cc"><input readonly value="${esc(c.copia_e_cola)}" aria-label="Pix copia e cola"><button class="btn btn-main" type="button" data-copiar="${esc(c.copia_e_cola)}">Copiar Pix</button></div>`
-      : `<p class="pend">Esperando a confirmação do pagamento. Esta página atualiza sozinha.</p>`;
-    else if (st === "recusado") corpo = `<p class="pend">O pagamento não foi aprovado e nada foi cobrado.</p>`;
-    return `<article class="compra"><div class="chead"><strong>${esc(PLANOS[c.plano] || c.plano || "LukClips")}</strong><time>${esc(data(c.criado_em))}</time><span class="st ${st}">${STATUS[st]}</span></div>${corpo}</article>`;
-  }).join("");
-  $("vazio").hidden = compras.length > 0;
+      : `<p class="pend">Esperando a confirmação do pagamento. Esta página atualiza sozinha.</p>`}
+  </article>`;
+
+const render = compras => {
+  const aprovadas = compras.filter(c => c.status === "aprovado" && c.serial);
+  const pendentes = compras.filter(c => c.status === "aguardando");
+  /* licenças: Pix pendentes primeiro, depois as ativas, depois as vencidas */
+  const ordem = c => estadoLic(c).ativa ? 0 : 1;
+  $("lista").innerHTML = pendentes.map(cardPendente).join("") +
+    [...aprovadas].sort((a, b) => ordem(a) - ordem(b)).map(cardLicenca).join("");
+  $("vazio").hidden = aprovadas.length + pendentes.length > 0;
+  $("nLic").textContent = aprovadas.length;
+  $("nCom").textContent = compras.length;
+
+  /* histórico */
+  $("hist").innerHTML = compras.length ? `<div class="lin cab"><span>Data</span><span>Plano</span><span>Valor</span><span>Forma</span><span>Situação</span></div>` +
+    compras.map(c => {
+      const st = c.status in STATUS ? c.status : "aguardando";
+      return `<div class="lin"><time>${esc(dataH(c.criado_em))}</time><span class="plano">${esc(PLANOS[c.plano] || c.plano)}</span><span>${esc(reais(c.valor))}</span><span>${c.forma === "cartao" ? "Cartão" : "Pix"}</span><span class="st ${st}">${STATUS[st]}</span></div>`;
+    }).join("") : "";
+  $("histVazio").hidden = compras.length > 0;
+
+  /* resumo */
+  const ativas = aprovadas.filter(c => estadoLic(c).ativa);
+  $("tAtivas").textContent = ativas.length;
+  $("tAtivasSub").textContent = aprovadas.length > ativas.length ? (aprovadas.length - ativas.length) + " vencida(s) ou bloqueada(s)" : (ativas.length ? "Tudo certo ✓" : "Nenhuma ainda");
+  const melhor = [...ativas].sort((a, b) => (RANK[b.plano] ?? 0) - (RANK[a.plano] ?? 0))[0];
+  if (melhor) {
+    $("tPlano").textContent = ({vitalicio: "Vitalício", trimestral: "Trimestral", mensal: "Mensal", teste: "Teste"})[melhor.plano] || melhor.plano;
+    const exp = melhor.licenca && melhor.licenca.expira_em;
+    $("tPlanoSub").textContent = exp ? "Válido até " + dataC(exp) : "Sem data para vencer";
+  } else { $("tPlano").textContent = "Nenhum"; $("tPlanoSub").textContent = pendentes.length ? "Pagamento em andamento" : "Escolha um plano abaixo"; }
+  const gasto = aprovadas.filter(c => c.plano !== "teste").reduce((s, c) => s + (c.valor || 0), 0);
+  $("tCompras").textContent = aprovadas.length ? aprovadas.length + (aprovadas.length === 1 ? " compra" : " compras") + (gasto ? " · " + reais(gasto) : "") : "Nenhuma compra ainda";
 };
 
 const carregar = async () => {
@@ -159,6 +341,9 @@ const carregar = async () => {
     if (!d.ok) throw new Error(d.erro || "Não deu para buscar suas compras.");
     $("listaErr").hidden = true;
     render(d.compras || []);
+    $("antigas").hidden = !(d.antigas > 0);
+    if (d.antigas > 0) $("antTit").textContent = d.antigas === 1
+      ? "Encontramos 1 compra antiga com este e-mail" : "Encontramos " + d.antigas + " compras antigas com este e-mail";
     if ((d.compras || []).some(c => c.status === "aguardando")) timer = setTimeout(carregar, 6000);
   } catch (e) {
     $("listaErr").textContent = Conta.traduz(e.message) + " Recarregue a página em instantes.";
@@ -166,16 +351,62 @@ const carregar = async () => {
   } finally { $("listaCarr").hidden = true; }
 };
 
-const abrirPainel = s => { $("email").textContent = s.user.email; mostrar("painel"); $("listaCarr").hidden = false; carregar(); };
+const abrirPainel = s => {
+  sessaoAtual = s;
+  const u = s.user;
+  $("email").textContent = $("cEmail").textContent = u.email;
+  $("tDesde").textContent = u.created_at ? new Date(u.created_at).toLocaleDateString("pt-BR", {month: "short", year: "numeric"}).replace(".", "") : "–";
+  $("cDesde").textContent = dataC(u.created_at);
+  $("cAcesso").textContent = dataH(u.last_sign_in_at);
+  mostrar("painel"); $("listaCarr").hidden = false; carregar();
+};
 
-$("lista").addEventListener("click", async e => {
+/* abas */
+const abrirAba = nome => {
+  document.querySelectorAll(".aba").forEach(b => b.setAttribute("aria-selected", b.dataset.aba === nome));
+  document.querySelectorAll("[data-painel]").forEach(p => { p.hidden = p.dataset.painel !== nome; });
+  history.replaceState(null, "", nome === "licencas" ? location.pathname : "#" + nome);
+};
+document.querySelector(".abas").addEventListener("click", e => { const b = e.target.closest(".aba"); if (b) abrirAba(b.dataset.aba); });
+if (["#compras", "#conta"].includes(location.hash)) abrirAba(location.hash.slice(1));
+
+/* copiar serial / Pix */
+document.addEventListener("click", async e => {
   const b = e.target.closest("[data-copiar]"); if (!b) return;
   const t = b.textContent;
   try { await navigator.clipboard.writeText(b.dataset.copiar); b.textContent = "Copiado ✓"; }
   catch (err) { b.textContent = "Selecione e copie"; }
   setTimeout(() => { b.textContent = t; }, 2000);
 });
-$("sair").addEventListener("click", async () => { clearTimeout(timer); await Conta.sair(); mostrar("login"); });
+
+/* compras antigas: prova que o e-mail é seu com um link */
+$("antBtn").addEventListener("click", async () => {
+  const b = $("antBtn"); if (b.disabled) return;
+  b.disabled = true; $("antOk").hidden = $("antErr").hidden = true;
+  const email = $("email").textContent;
+  const {error} = await Conta.sb.auth.signInWithOtp({email, options: {shouldCreateUser: false, emailRedirectTo: new URL("conta.html", location.href).href}});
+  b.disabled = false;
+  if (error) { $("antErr").textContent = Conta.traduz(error.message); $("antErr").hidden = false; return; }
+  $("antOk").textContent = "Pronto! Abra o e-mail que enviamos para " + email + " (veja o spam) e clique no link.";
+  $("antOk").hidden = false;
+});
+
+/* trocar senha */
+$("fSenha").addEventListener("submit", async e => {
+  e.preventDefault();
+  const ok = t => { $("sOk").textContent = t; $("sOk").hidden = !t; }, err = t => { $("sErr").textContent = t; $("sErr").hidden = !t; };
+  ok(""); err("");
+  const a = $("s1").value, b = $("s2").value;
+  if (a.length < 6) return err("A senha precisa ter pelo menos 6 caracteres.");
+  if (a !== b) return err("As duas senhas não são iguais.");
+  const {error} = await Conta.sb.auth.updateUser({password: a});
+  if (error) return err(/different from the old/i.test(error.message) ? "A senha nova precisa ser diferente da atual." : Conta.traduz(error.message));
+  $("s1").value = $("s2").value = ""; ok("Senha trocada ✓");
+});
+
+const sair = async () => { clearTimeout(timer); await Conta.sair(); mostrar("login"); };
+$("sair").addEventListener("click", sair);
+$("sair2").addEventListener("click", sair);
 
 /* link de "esqueci minha senha" do e-mail */
 Conta.sb.auth.onAuthStateChange((ev) => { if (ev === "PASSWORD_RECOVERY") { recuperando = true; mostrar("nova"); } });

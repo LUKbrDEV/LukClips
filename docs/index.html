@@ -566,6 +566,16 @@ document.querySelectorAll("[data-buy]").forEach(a => {
   const plano = a.dataset.buy;
   a.addEventListener("click", e => { e.preventDefault(); abrir(plano); });
 });
+/* link vindo de outra página (ex.: Minha conta): ./#comprar-vitalicio abre a compra direto */
+const doLink = () => {
+  const m = location.hash.match(/^#comprar-(mensal|trimestral|vitalicio)$/);
+  if (!m) return;
+  history.replaceState(null, "", location.pathname + location.search + "#planos");
+  document.getElementById("planos")?.scrollIntoView();
+  abrir(m[1]);
+};
+window.addEventListener("hashchange", doLink);
+doLink();
 const semLogin = d => d && d.erro === "login" && (passo("pConta"), erro("Sua sessão expirou. Entre de novo para continuar."), true);
 $m("oCartao").addEventListener("click", async () => {
   const b = $m("oCartao"); if (b.disabled) return;

@@ -5,21 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google-site-verification" content="oqq0bYlXrOShVX2TmrgVh75bTdThpuGirN22VtUC14M" />
 <title>LukClips: programa para fazer cortes de lives automaticamente</title>
-<meta name="description" content="Programa para Windows que faz cortes de lives sozinho: acha os melhores momentos pelo chat, mapa de calor e reações e gera cortes verticais com legenda.">
+<meta name="description" content="Transforme lives em cortes que podem dar dinheiro. O LukClips acha os melhores momentos sozinho e entrega cortes verticais prontos para postar e monetizar.">
 <link rel="canonical" href="https://lukclips.pages.dev/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="LukClips">
 <meta property="og:locale" content="pt_BR">
 <meta property="og:url" content="https://lukclips.pages.dev/">
 <meta property="og:title" content="LukClips: programa para fazer cortes de lives automaticamente">
-<meta property="og:description" content="Programa para Windows que faz cortes de lives sozinho: acha os melhores momentos pelo chat, mapa de calor e reações e gera cortes verticais com legenda.">
+<meta property="og:description" content="Transforme lives em cortes que podem dar dinheiro. O LukClips acha os melhores momentos sozinho e entrega cortes verticais prontos para postar e monetizar.">
 <meta property="og:image" content="https://lukclips.pages.dev/og.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="LukClips: cole o link, saia com cortes prontos">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="LukClips: programa para fazer cortes de lives automaticamente">
-<meta name="twitter:description" content="Programa para Windows que faz cortes de lives sozinho: acha os melhores momentos pelo chat, mapa de calor e reações e gera cortes verticais com legenda.">
+<meta name="twitter:description" content="Transforme lives em cortes que podem dar dinheiro. O LukClips acha os melhores momentos sozinho e entrega cortes verticais prontos para postar e monetizar.">
 <meta name="twitter:image" content="https://lukclips.pages.dev/og.jpg">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -91,6 +91,23 @@ nav .btn{min-height:42px;padding:0 18px;font-size:15px}
 .tag strong{display:block;font:800 15px Archivo,sans-serif;color:var(--pink)}
 .tag.t2 strong{color:var(--ok)}
 @media(max-width:820px){.hero{grid-template-columns:1fr}.tag{right:-6px}.tag.t2{left:-6px}}
+/* dinheiro */
+.earn{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:40px}
+.ea{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:26px}
+.ea .n{display:grid;place-items:center;width:46px;height:46px;border-radius:13px;background:#4ade801f;color:var(--ok);font:900 22px Archivo,sans-serif;margin-bottom:16px}
+.ea p{color:var(--mute);font-size:15px;margin-top:8px}
+.flow{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px 14px;margin-top:36px;padding:22px;border-radius:18px;border:1px solid #8b5cf655;background:linear-gradient(90deg,#8b5cf61a,#ec48991a)}
+.flow span{font:800 clamp(16px,1.8vw,20px) Archivo,sans-serif;white-space:nowrap}
+.flow i{font-style:normal;color:var(--vio2);font-weight:800;font-size:20px}
+.flow span:last-child{background:var(--ok);color:#06200f;padding:4px 12px;border-radius:8px}
+.vol{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:16px}
+.vol div{border-radius:16px;padding:22px 24px;background:var(--panel);border:1px solid var(--line)}
+.vol strong{display:block;font:800 18px Archivo,sans-serif;margin-bottom:6px}
+.vol .y{border-color:#4ade8066;background:linear-gradient(180deg,#4ade8012,var(--panel))}
+.vol .y strong{color:var(--ok)}
+.vol p{color:var(--mute);font-size:15px}
+@media(max-width:860px){.earn{grid-template-columns:1fr}.vol{grid-template-columns:1fr}}
+.paga{margin-top:18px;display:inline-flex;align-items:center;gap:10px;padding:10px 16px;border-radius:12px;background:#facc151a;border:1px solid #facc1555;color:var(--yel);font-weight:600;font-size:15px}
 /* pain */
 .vs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;margin-top:40px}
 .vs>div{border:1px solid var(--line);border-radius:18px;padding:28px;background:var(--panel)}
@@ -263,6 +280,7 @@ footer a{text-decoration:none}footer a:hover{color:var(--ink)}
       LukClips
     </a>
     <div class="links">
+      <a href="#dinheiro">Como ganhar</a>
       <a href="#calor">Como escolhe</a>
       <a href="#telas">Por dentro</a>
       <a href="#recursos">Recursos</a>
@@ -271,7 +289,7 @@ footer a{text-decoration:none}footer a:hover{color:var(--ink)}
       <a href="download.html">Download</a>
       <a href="conta.html">Minha conta</a>
     </div>
-    <a class="btn btn-main" href="#planos">Quero o LukClips</a>
+    <a class="btn btn-main" href="#planos">Começar a lucrar</a>
   </div>
 </nav>
 
@@ -279,11 +297,12 @@ footer a{text-decoration:none}footer a:hover{color:var(--ink)}
   <div class="wrap hero">
     <div>
       <p class="kicker">Fábrica de cortes para clipadores</p>
-      <h1>Pare de assistir 6 horas de live pra achar <span class="hl">1 minuto bom</span>.</h1>
-      <p class="lead">Cole o link. O LukClips lê o chat, o mapa de calor do YouTube, o áudio e a tela, acha os momentos em que a galera mais reagiu e entrega cortes verticais com legenda, título e hashtags.</p>
+      <h1>Transforme lives em cortes que <span class="hl">dão dinheiro</span>.</h1>
+      <p class="lead">Clipador ganha com volume: quanto mais cortes bons você posta, mais views e mais chances de viralizar. O LukClips acha os melhores momentos da live sozinho e entrega os cortes prontos. <strong style="color:var(--ink)">Você só posta e monetiza.</strong></p>
+      <p class="lead" style="margin-top:10px;font-size:16px">Chega de assistir 6 horas de live pra achar 1 minuto bom.</p>
       <div class="cta">
-        <a class="btn btn-main" href="#planos">Comprar agora</a>
-        <a class="btn btn-ghost" href="#calor">Ver como ele escolhe</a>
+        <a class="btn btn-main" href="#planos">Quero lucrar com cortes</a>
+        <a class="btn btn-ghost" href="#dinheiro">Como dá pra ganhar</a>
       </div>
       <div class="trust"><span>Pagamento único disponível</span><span>Garantia de 7 dias</span><span>Sem limite de minutos</span></div>
       <div class="src">Funciona com <span class="chip">YouTube</span><span class="chip">Twitch</span><span class="chip">Kick</span><span class="chip">TikTok</span><span class="chip">Vídeo do seu PC</span></div>
@@ -297,12 +316,33 @@ footer a{text-decoration:none}footer a:hover{color:var(--ink)}
         <span class="bar"></span>
       </div>
       <div class="tag"><strong>Pico de chat</strong>2:14:08 · +840%</div>
-      <div class="tag t2"><strong>Corte pronto</strong>corte_07.mp4 · 0:52</div>
+      <div class="tag t2"><strong>Corte pronto pra postar</strong>corte_07.mp4 · 0:52</div>
     </div>
   </div>
 </header>
 
-<section class="band alt">
+<section class="band alt" id="dinheiro">
+  <div class="wrap">
+    <p class="kicker">De onde vem o dinheiro</p>
+    <h2>Cada corte postado é mais uma chance de ganhar.</h2>
+    <p class="lead">Cortes de live estão em todo lugar no TikTok, no YouTube Shorts e no Reels. Quem posta mais aparece mais, e quem aparece mais tem mais chances de ganhar. Veja as formas mais comuns de transformar cortes em renda:</p>
+    <div class="earn">
+      <div class="ea"><span class="n">1</span><h3>Campanhas de cortes pagas</h3><p>Streamers, agências e marcas pagam clipadores pelas visualizações dos cortes que eles postam. Mais cortes no ar, mais views somando na conta.</p></div>
+      <div class="ea"><span class="n">2</span><h3>Monetização das plataformas</h3><p>TikTok, YouTube Shorts e Instagram têm programas que pagam criadores pelos vídeos. Um perfil de cortes que posta todo dia cresce mais rápido pra chegar lá.</p></div>
+      <div class="ea"><span class="n">3</span><h3>Vender cortes como serviço</h3><p>Muito streamer não tem tempo de editar. Ofereça um pacote de cortes prontos toda semana e cobre por isso. Com o LukClips, você entrega rápido.</p></div>
+    </div>
+    <div class="flow" aria-label="Mais cortes, mais chances de viralizar, mais views, mais dinheiro">
+      <span>Mais cortes</span><i>→</i><span>Mais chances de viralizar</span><i>→</i><span>Mais views</span><i>→</i><span>Mais dinheiro</span>
+    </div>
+    <div class="vol">
+      <div><strong>Clipando na mão</strong><p>Um dia inteiro assistindo, recortando e legendando pra sair com poucos cortes. Quando você posta, o momento já esfriou.</p></div>
+      <div class="y"><strong>Clipando com o LukClips</strong><p>Coloca as lives na fila de noite e acorda com uma leva de cortes prontos. Você posta enquanto o assunto ainda está quente.</p></div>
+    </div>
+    <p class="note">O quanto você ganha depende do seu perfil, dos streamers que você corta e das regras de cada campanha e plataforma. O LukClips não garante ganhos: ele te dá volume e velocidade pra aproveitar essas oportunidades.</p>
+  </div>
+</section>
+
+<section class="band" style="border-bottom:1px solid var(--line)">
   <div class="wrap">
     <h2>Clipar na mão não escala. Clipar com o LukClips, sim.</h2>
     <div class="vs">
@@ -429,8 +469,8 @@ footer a{text-decoration:none}footer a:hover{color:var(--ink)}
 <section class="band alt" id="planos">
   <div class="wrap">
     <p class="kicker">Planos</p>
-    <h2>Escolha seu plano e comece a clipar hoje.</h2>
-    <p class="lead">Todos os recursos em todos os planos. Sem marca d'água do LukClips, sem limite de vídeos.</p>
+    <h2>Um corte que viraliza pode pagar o programa.</h2>
+    <p class="lead">Pense no LukClips como a ferramenta de trabalho do clipador: o investimento é pequeno perto do que um corte que bomba pode trazer. Todos os recursos em todos os planos, sem marca d'água do LukClips, sem limite de vídeos.</p>
     <div class="plans">
       <div class="pl">
         <h3>Mensal</h3><p class="sub">Pra começar sem compromisso</p>
@@ -458,6 +498,7 @@ footer a{text-decoration:none}footer a:hover{color:var(--ink)}
       <svg viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M32 4l22 8v18c0 14-9.5 25-22 30C19.5 55 10 44 10 30V12z" fill="#4ade801f" stroke="#4ade80" stroke-width="3"/><path d="M22 32l7 7 14-15" stroke="#4ade80" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>
       <div><h3>Garantia incondicional de 7 dias</h3><p>Compre, use à vontade, gere quantos cortes quiser. Se não gostar por qualquer motivo, devolvemos 100% do valor em até 7 dias. O risco é todo nosso.</p></div>
     </div>
+    <p class="paga">💰 Quanto antes você começa a postar, antes os cortes começam a trabalhar por você.</p>
     <p class="pay">Pix direto aqui no site ou cartão pelo Mercado Pago. Seu serial aparece na hora, assim que o pagamento é aprovado.</p>
   </div>
 </section>
@@ -476,6 +517,7 @@ footer a{text-decoration:none}footer a:hover{color:var(--ink)}
     </div>
     <div>
       <p class="kicker">Dúvidas</p>
+      <details><summary>Dá pra ganhar dinheiro com cortes?</summary><p>Sim, muita gente ganha com campanhas de cortes pagas por visualização, com a monetização do TikTok, YouTube e Instagram ou vendendo cortes para streamers. O resultado depende do seu perfil, de quem você corta e de quanto você posta, então não existe valor garantido. O que o LukClips faz é tirar o trabalho pesado, pra você postar muito mais cortes no mesmo tempo.</p></details>
       <details><summary>Por que não tem teste grátis?</summary><p>Porque você tem algo melhor: 7 dias de garantia com o programa completo, sem marca d'água e sem limite. Se não fizer sentido pra você, devolvemos todo o valor.</p></details>
       <details><summary>Preciso de placa de vídeo?</summary><p>Não. Funciona sem, mas uma placa NVIDIA deixa a transcrição bem mais rápida e permite usar a qualidade Máxima do Whisper.</p></details>
       <details><summary>Quanto tempo demora pra gerar os cortes?</summary><p>Depende do tamanho da live e do seu PC. A transcrição é a etapa mais demorada. Use a fila e a opção de desligar o PC no fim pra processar enquanto você dorme.</p></details>
@@ -491,8 +533,8 @@ footer a{text-decoration:none}footer a:hover{color:var(--ink)}
 <section class="band final">
   <div class="wrap">
     <h2>A live de ontem pode virar 20 cortes hoje.</h2>
-    <p class="lead">Enquanto você assiste procurando momento, outro clipador já postou. Deixe o LukClips achar e cortar por você.</p>
-    <div class="cta"><a class="btn btn-main" href="#planos">Quero o LukClips</a></div>
+    <p class="lead">Enquanto você assiste procurando momento, outro clipador já postou e já está somando views. Deixe o LukClips achar e cortar por você, e use seu tempo pra postar e ganhar.</p>
+    <div class="cta"><a class="btn btn-main" href="#planos">Quero começar a lucrar com cortes</a></div>
     <div class="trust" style="justify-content:center"><span>Garantia de 7 dias</span><span>Pix ou cartão</span><span>Atualizações incluídas</span></div>
   </div>
 </section>

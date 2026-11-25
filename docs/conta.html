@@ -92,7 +92,11 @@ main{place-items:start center}
 .info{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px 16px;margin-top:14px}
 .info div{font-size:14px;color:var(--ink)}
 .info small{display:block;color:var(--mute);font-size:12.5px}
-.st.vence{background:#facc1522;color:var(--yel)}.st.vencida,.st.bloqueada{background:#f8717122;color:#fca5a5}.st.ativa{background:#4ade8022;color:var(--ok)}
+.st.vence{background:#facc1522;color:var(--yel)}.st.vencida,.st.bloqueada{background:#f8717122;color:#fca5a5}.st.ativa{background:#4ade8022;color:var(--ok)}.st.livre{background:#8b5cf62a;color:#c4b5fd}
+.st i{display:inline-block;width:7px;height:7px;border-radius:50%;background:currentColor;margin-right:6px;vertical-align:1px}
+.st.ativa i{box-shadow:0 0 0 3px #4ade8033}
+.uso-nota{margin-top:10px;color:var(--mute);font-size:13px}
+.compra.em-uso .serial code{border-style:solid;border-color:#4ade8055}
 .renovar{margin-top:12px}
 .ativar{margin-top:26px;padding:20px;border-radius:16px;background:#121119;border:1px solid var(--line)}
 .ativar h2,.planos h2,.secao h2{font:800 18px Archivo,sans-serif;margin:0 0 4px}
@@ -271,23 +275,26 @@ const estadoLic = c => {
     const dias = Math.ceil((new Date(l.expira_em) - Date.now()) / DIA);
     if (dias <= 0) return {cls: "vencida", txt: "Vencida", ativa: false, renovar: true};
     if (dias <= 7) return {cls: "vence", txt: dias === 1 ? "Vence amanhã" : "Vence em " + dias + " dias", ativa: true, renovar: true};
-    return {cls: "ativa", txt: "Ativa", ativa: true};
   }
-  return {cls: "ativa", txt: "Ativa", ativa: true};
+  /* ainda válida: diz se o serial já foi usado em um PC */
+  if (!c.licenca) return {cls: "ativa", txt: "Ativa", ativa: true};
+  if (l.ativada) return {cls: "ativa", txt: "Em uso", ativa: true, uso: true};
+  return {cls: "livre", txt: "Pronta para ativar", ativa: true};
 };
 
 const cardLicenca = c => {
   const e = estadoLic(c), l = c.licenca;
   const validade = l ? (l.expira_em ? dataC(l.expira_em) : "Para sempre") : (c.plano === "vitalicio" ? "Para sempre" : "–");
-  const pc = l ? (l.ativada ? "Ativada" + (l.ativada_em ? " em " + dataC(l.ativada_em) : "") : "Ainda não ativada") : "–";
-  return `<article class="compra">
-    <div class="chead"><strong>${esc(PLANOS[c.plano] || c.plano)}</strong><span class="st ${e.cls}">${e.txt}</span></div>
+  const pc = l ? (l.ativada ? "Em uso" + (l.ativada_em ? " desde " + dataC(l.ativada_em) : "") : "Ainda não ativada") : "–";
+  return `<article class="compra${l && l.ativada ? " em-uso" : ""}">
+    <div class="chead"><strong>${esc(PLANOS[c.plano] || c.plano)}</strong><span class="st ${e.cls}">${e.uso ? "<i></i>" : ""}${e.txt}</span></div>
     <div class="info">
       <div><small>Comprada em</small>${esc(dataC(c.pago_em || c.criado_em))}</div>
       <div><small>Válida até</small>${esc(validade)}</div>
       <div><small>Computador</small>${esc(pc)}</div>
     </div>
     <div class="serial"><code>${esc(c.serial)}</code><button class="btn" type="button" data-copiar="${esc(c.serial)}">Copiar</button></div>
+    ${l && l.ativada && l.status !== "bloqueada" ? `<p class="uso-nota">Este serial já está ativado em um computador. Cada serial funciona em um PC só. Trocou de PC? Fale com o <a href="suporte.html">suporte</a>.</p>` : ""}
     ${e.renovar ? `<a class="btn btn-main renovar" href="./#comprar-${c.plano === "trimestral" ? "trimestral" : "mensal"}">Renovar agora</a>` : ""}
   </article>`;
 };

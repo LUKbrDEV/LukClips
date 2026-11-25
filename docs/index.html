@@ -171,10 +171,12 @@ nav .btn{min-height:42px;padding:0 18px;font-size:15px;white-space:nowrap;flex:n
 .ft p{color:var(--mute);font-size:15px;margin-top:8px}
 .ft.big{grid-column:span 2;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:22px;align-items:center}
 .ft.big img{border-radius:10px;border:1px solid var(--line)}
+.ft.big.full{grid-column:1/-1;grid-template-columns:minmax(0,.8fr) minmax(0,1.7fr);gap:32px;padding:28px}
+.ft.big.full img{width:100%;height:auto}
 .ico{width:40px;height:40px;border-radius:11px;background:#8b5cf622;display:grid;place-items:center;margin-bottom:14px;color:var(--vio2)}
 .ico svg{width:22px;height:22px}
 @media(max-width:960px){.feat{grid-template-columns:repeat(2,minmax(0,1fr))}.ft.big{grid-column:1/-1}}
-@media(max-width:600px){.feat{grid-template-columns:1fr}.ft.big{grid-template-columns:1fr}}
+@media(max-width:600px){.feat{grid-template-columns:1fr}.ft.big,.ft.big.full{grid-template-columns:1fr}}
 /* pc */
 .pc{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-top:36px}
 .pc div{padding:20px;border-left:3px solid var(--vio)}
@@ -428,14 +430,14 @@ footer a{text-decoration:none}footer a:hover{color:var(--ink)}
     <p class="kicker">Recursos</p>
     <h2>Tudo que um clipador precisa, num programa só.</h2>
     <div class="feat">
-      <div class="ft big">
+      <div class="ft big full">
         <div>
           <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M6 10h12"/></svg></div>
           <h3>Enquadramento automático</h3>
           <p>Acha a câmera do streamer sozinho e escolhe o layout de cada corte: câmera em tela cheia vira um quadro só; câmera no canto vira câmera + jogo. Se a tela muda no meio do corte, o layout troca junto. No react, o recorte de baixo segue o vídeo que o streamer está assistindo.</p>
           <p>8 formatos de tela (9:16, 4:5, 1:1, 16:9 e mais), 10 estilos de legenda, 8 efeitos e duração automática ou do tamanho exato que você quiser.</p>
         </div>
-        <img src="img/estilos.webp" alt="Ferramentas Básico e Legendas do LukClips: formatos de tela, velocidade, estilos e efeitos de legenda" width="791" height="681" loading="lazy">
+        <img src="img/estilos.webp" alt="Ferramentas Básico e Legendas do LukClips: formatos de tela, estilos e efeitos de legenda" width="1924" height="880" loading="lazy">
       </div>
       <div class="ft"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h10M4 18h13"/></svg></div><h3>Legenda palavra por palavra</h3><p>Transcrição automática com destaque na palavra falada. Efeitos Pop, Karaokê, Caixa, Neon e mais, com fonte, cores, tamanho e posição do seu jeito. Dá pra corrigir cada fala antes de gerar.</p></div>
       <div class="ft big">
@@ -444,7 +446,7 @@ footer a{text-decoration:none}footer a:hover{color:var(--ink)}
           <h3>Whisper large-v3 com placa NVIDIA</h3>
           <p>Escolha entre Rápido, Preciso e Máximo. Com placa NVIDIA, a transcrição fica muito mais rápida e precisa. Sem placa também funciona.</p>
         </div>
-        <img src="img/transcricao.webp" alt="Configuração de transcrição com Whisper e placa de vídeo" width="396" height="314" loading="lazy">
+        <img src="img/transcricao.webp" alt="Configuração de transcrição com Whisper e placa de vídeo" width="796" height="632" loading="lazy">
       </div>
       <div class="ft"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></div><h3>Fila + desligar o PC</h3><p>Coloca várias lives na fila antes de dormir e marca pra desligar o computador no fim. Acorda com os cortes prontos.</p></div>
       <div class="ft"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4M11 8v6M8 11h6"/></svg></div><h3>Zoom no pico e corte de silêncio</h3><p>Zoom automático na hora da reação, remove os silêncios mortos e adiciona barra de progresso pra segurar a retenção.</p></div>
